@@ -15,7 +15,7 @@ export async function handleVaultGet(client: RefHubClient, vaultId: string, tabl
 
 export async function handleVaultCreate(
   client: RefHubClient,
-  opts: { name: string; description?: string; color?: string; visibility?: string; category?: string },
+  opts: { name: string; description?: string; color?: string; visibility?: string; category?: string; abstract?: string },
   tableMode: boolean,
 ): Promise<void> {
   const body: Record<string, unknown> = { name: opts.name };
@@ -23,6 +23,7 @@ export async function handleVaultCreate(
   if (opts.color) body['color'] = opts.color;
   if (opts.visibility) body['visibility'] = opts.visibility;
   if (opts.category) body['category'] = opts.category;
+  if (opts.abstract) body['abstract'] = opts.abstract;
   const result = await client.createVault(body as Parameters<RefHubClient['createVault']>[0]);
   format(result, tableMode);
 }
@@ -30,10 +31,16 @@ export async function handleVaultCreate(
 export async function handleVaultUpdate(
   client: RefHubClient,
   vaultId: string,
-  opts: { name?: string; description?: string; color?: string; category?: string },
+  opts: { name?: string; description?: string; color?: string; category?: string; abstract?: string },
   tableMode: boolean,
 ): Promise<void> {
-  const result = await client.updateVault(vaultId, opts);
+  const body: Record<string, unknown> = {};
+  if (opts.name) body['name'] = opts.name;
+  if (opts.description) body['description'] = opts.description;
+  if (opts.color) body['color'] = opts.color;
+  if (opts.category) body['category'] = opts.category;
+  if (opts.abstract) body['abstract'] = opts.abstract;
+  const result = await client.updateVault(vaultId, body as Parameters<RefHubClient['updateVault']>[1]);
   format(result, tableMode);
 }
 
@@ -127,10 +134,11 @@ export function registerVaults(program: Command): void {
     .option('--color <color>')
     .option('--visibility <visibility>', 'private|protected|public')
     .option('--category <category>')
+    .option('--abstract <abstract>')
     .action(async (opts, cmd) => {
       const g = cmd.optsWithGlobals();
       const client = resolveClient(g.apiKey);
-      await run(() => handleVaultCreate(client, opts as { name: string; description?: string; color?: string; visibility?: string; category?: string }, g.table ?? false));
+      await run(() => handleVaultCreate(client, opts as { name: string; description?: string; color?: string; visibility?: string; category?: string; abstract?: string }, g.table ?? false));
     });
 
   vaults
@@ -141,10 +149,11 @@ export function registerVaults(program: Command): void {
     .option('--description <desc>')
     .option('--color <color>')
     .option('--category <category>')
+    .option('--abstract <abstract>')
     .action(async (vaultId, opts, cmd) => {
       const g = cmd.optsWithGlobals();
       const client = resolveClient(g.apiKey);
-      await run(() => handleVaultUpdate(client, vaultId, opts as { name?: string; description?: string; color?: string; category?: string }, g.table ?? false));
+      await run(() => handleVaultUpdate(client, vaultId, opts as { name?: string; description?: string; color?: string; category?: string; abstract?: string }, g.table ?? false));
     });
 
   vaults

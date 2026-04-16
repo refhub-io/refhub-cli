@@ -1,0 +1,26 @@
+{
+  "name": "refhub-cli",
+  "version": "0.1.0",
+  "description": "CLI execution layer for the RefHub agent skill",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "bin": { "refhub": "dist/index.js" },
+  "scripts": {
+    "build": "tsc && node -e \"import('fs').then(fs=>{ const f='dist/index.js'; fs.writeFileSync(f,'#!/usr/bin/env node\\n'+fs.readFileSync(f,'utf8')); fs.chmodSync(f,'755'); })\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "tsx scripts/smoke.ts",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

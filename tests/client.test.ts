@@ -1,5 +1,5 @@
 // tests/client.test.ts
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { RefHubClient, RefHubError, resolveClient } from '../src/client.js';
 
 function mockFetch(body: unknown, ok = true, status = 200) {

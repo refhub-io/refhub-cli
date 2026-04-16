@@ -161,7 +161,8 @@ export class RefHubClient {
     if (params.tag_id) q.set('tag_id', params.tag_id);
     if (params.page !== undefined) q.set('page', String(params.page));
     if (params.limit !== undefined) q.set('limit', String(params.limit));
-    return this.req<ApiResponse<Item[]>>('GET', `/vaults/${vaultId}/search?${q}`);
+    const qs = q.toString() ? `?${q}` : '';
+    return this.req<ApiResponse<Item[]>>('GET', `/vaults/${vaultId}/search${qs}`);
   }
 
   getStats(vaultId: string) {
@@ -201,7 +202,7 @@ export class RefHubClient {
   // ── Relations ────────────────────────────────────────────────────────────────
 
   listRelations(vaultId: string, type?: string) {
-    const qs = type ? `?type=${type}` : '';
+    const qs = type ? `?type=${encodeURIComponent(type)}` : '';
     return this.req<ApiResponse<Relation[]>>('GET', `/vaults/${vaultId}/relations${qs}`);
   }
 
@@ -269,7 +270,14 @@ export async function run(fn: () => Promise<void>): Promise<void> {
   } catch (err) {
     if (err instanceof RefHubError) {
       process.stderr.write(
-        JSON.stringify({ error: { code: err.code, message: err.message, request_id: err.request_id } }) + '\n',
+        JSON.stringify({
+          error: {
+            code: err.code,
+            message: err.message,
+            request_id: err.request_id,
+            ...(err.retry_after_seconds !== undefined ? { retry_after_seconds: err.retry_after_seconds } : {}),
+          },
+        }) + '\n',
       );
       process.exit(err.status === 401 ? 3 : 1);
     }

@@ -25,7 +25,7 @@ export interface Item {
   vault_id: string;
   publication_id: string;
   title: string;
-  authors?: string;
+  authors?: string[];
   year?: number;
   doi?: string;
   bibtex_key?: string;

@@ -31,7 +31,7 @@ export async function handleItemAdd(
   tableMode: boolean,
 ): Promise<void> {
   const item: Record<string, unknown> = { title: opts.title };
-  if (opts.authors) item['authors'] = opts.authors;
+  if (opts.authors) item['authors'] = opts.authors.split(',').map((a) => a.trim());
   if (opts.year !== undefined) item['year'] = opts.year;
   if (opts.doi) item['doi'] = opts.doi;
   if (opts.tags) item['tag_ids'] = opts.tags.split(',').map((t) => t.trim());
@@ -48,7 +48,7 @@ export async function handleItemUpdate(
 ): Promise<void> {
   const body: Record<string, unknown> = {};
   if (opts.title) body['title'] = opts.title;
-  if (opts.authors) body['authors'] = opts.authors;
+  if (opts.authors) body['authors'] = opts.authors.split(',').map((a) => a.trim());
   if (opts.year !== undefined) body['year'] = opts.year;
   if (opts.doi) body['doi'] = opts.doi;
   if (opts.tags) {

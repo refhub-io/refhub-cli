@@ -60,7 +60,7 @@ async function main() {
 
   // 5. Add item
   const item = await step('add item', () =>
-    client.addItems(testVaultId, [{ title: 'Smoke Test Paper', authors: 'Test Author', year: 2026 }])
+    client.addItems(testVaultId, [{ title: 'Smoke Test Paper', authors: ['Test Author'], year: 2026 }])
   ) as { data: Array<{ id: string; publication_id: string }> };
   const itemId = item.data[0].id;
   const pubId = item.data[0].publication_id;

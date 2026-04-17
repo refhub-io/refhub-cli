@@ -23,7 +23,7 @@ export interface Vault {
 export interface Item {
   id: string;
   vault_id: string;
-  publication_id: string;
+  original_publication_id: string;
   title: string;
   authors?: string[];
   year?: number;

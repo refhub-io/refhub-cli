@@ -61,19 +61,19 @@ async function main() {
   // 5. Add item
   const item = await step('add item', () =>
     client.addItems(testVaultId, [{ title: 'Smoke Test Paper', authors: ['Test Author'], year: 2026 }])
-  ) as { data: Array<{ id: string; publication_id: string }> };
+  ) as { data: Array<{ id: string }> };
   const itemId = item.data[0].id;
-  const pubId = item.data[0].publication_id;
-  console.log(`   Item id: ${itemId}, pub id: ${pubId}`);
+  console.log(`   Item id: ${itemId}`);
 
   // 6. Relation CRUD
+  // publication_relations.publication_id references vault_publications.id (the item id)
   const item2 = await step('add second item for relation', () =>
     client.addItems(testVaultId, [{ title: 'Related Smoke Paper', year: 2026 }])
-  ) as { data: Array<{ id: string; publication_id: string }> };
-  const pubId2 = item2.data[0].publication_id;
+  ) as { data: Array<{ id: string }> };
+  const itemId2 = item2.data[0].id;
 
   const relation = await step('create relation', () =>
-    client.createRelation(testVaultId, { publication_id: pubId, related_publication_id: pubId2, relation_type: 'cites' })
+    client.createRelation(testVaultId, { publication_id: itemId, related_publication_id: itemId2, relation_type: 'cites' })
   ) as { data: { id: string } };
   const relationId = relation.data.id;
 

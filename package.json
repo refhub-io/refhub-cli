@@ -1,7 +1,7 @@
 {
-  "name": "refhub-cli",
-  "version": "0.1.0",
-  "description": "CLI execution layer for the RefHub agent skill",
+  "name": "@refhub/cli",
+  "version": "1.0.0",
+  "description": "refhub CLI execution layer for agent skills",
   "type": "module",
   "engines": { "node": ">=18" },
   "bin": { "refhub": "dist/index.js" },

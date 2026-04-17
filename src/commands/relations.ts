@@ -24,7 +24,7 @@ export async function handleRelationCreate(
   const result = await client.createRelation(vaultId, {
     publication_id: opts.pub,
     related_publication_id: opts.related,
-    relation_type: opts.type,
+    relation_type: opts.type as import('../types.js').RelationType | undefined,
   });
   format(result, tableMode);
 }
@@ -36,7 +36,7 @@ export async function handleRelationUpdate(
   type: string,
   tableMode: boolean,
 ): Promise<void> {
-  const result = await client.updateRelation(vaultId, relationId, { relation_type: type });
+  const result = await client.updateRelation(vaultId, relationId, { relation_type: type as import('../types.js').RelationType });
   format(result, tableMode);
 }
 

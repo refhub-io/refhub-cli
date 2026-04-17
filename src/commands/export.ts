@@ -20,7 +20,13 @@ export function registerExport(program: Command): void {
     .action(async (opts, cmd) => {
       const g = cmd.optsWithGlobals();
       const client = resolveClient(g.apiKey);
-      const fmt = opts.format === 'bibtex' ? 'bibtex' : 'json';
+      if (opts.format !== 'json' && opts.format !== 'bibtex') {
+        process.stderr.write(
+          JSON.stringify({ error: { code: 'invalid_format', message: `Unknown format '${opts.format}'. Use json or bibtex.` } }) + '\n',
+        );
+        process.exit(2);
+      }
+      const fmt = opts.format as 'json' | 'bibtex';
       await run(() => handleExport(client, opts.vault, fmt));
     });
 }

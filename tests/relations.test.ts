@@ -60,6 +60,10 @@ describe('relation commands', () => {
   it('handleRelationUpdate sends PATCH with relation_type', async () => {
     mockFetch({ data: { id: 'r1' } });
     await handleRelationUpdate(client, 'v1', 'r1', 'extends', false);
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      expect.stringContaining('/relations/r1'),
+      expect.objectContaining({ method: 'PATCH' })
+    );
     const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
     expect(body.relation_type).toBe('extends');
   });

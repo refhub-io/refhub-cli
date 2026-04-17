@@ -2,7 +2,7 @@
 import type {
   ApiResponse, Vault, VaultDetail, Share,
   Item, UpsertResult, PreviewResult,
-  Tag, Relation, BibTeXImportResult, AuditEntry, VaultStats,
+  Tag, Relation, BibTeXImportResult, AuditEntry, VaultStats, RelationType,
 } from './types.js';
 
 export class RefHubError extends Error {
@@ -206,11 +206,11 @@ export class RefHubClient {
     return this.req<ApiResponse<Relation[]>>('GET', `/vaults/${vaultId}/relations${qs}`);
   }
 
-  createRelation(vaultId: string, body: { publication_id: string; related_publication_id: string; relation_type?: string }) {
+  createRelation(vaultId: string, body: { publication_id: string; related_publication_id: string; relation_type?: RelationType }) {
     return this.req<ApiResponse<Relation>>('POST', `/vaults/${vaultId}/relations`, body);
   }
 
-  updateRelation(vaultId: string, relationId: string, body: { relation_type: string }) {
+  updateRelation(vaultId: string, relationId: string, body: { relation_type: RelationType }) {
     return this.req<ApiResponse<Relation>>('PATCH', `/vaults/${vaultId}/relations/${relationId}`, body);
   }
 

@@ -1,3 +1,4 @@
+// src/commands/relations.ts
 import type { Command } from 'commander';
 import { RefHubClient, resolveClient, run } from '../client.js';
 import { format } from '../format.js';

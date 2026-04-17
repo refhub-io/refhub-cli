@@ -23,11 +23,11 @@ export async function handleImportDoi(
 export async function handleImportBibtex(
   client: RefHubClient,
   vaultId: string,
-  bibtexOrPath: string,
+  bibtex: string,
   tagsCsv: string | undefined,
   tableMode: boolean,
 ): Promise<void> {
-  const result = await client.importBibtex(vaultId, bibtexOrPath, parseTags(tagsCsv));
+  const result = await client.importBibtex(vaultId, bibtex, parseTags(tagsCsv));
   format(result, tableMode);
 }
 
@@ -70,7 +70,17 @@ export function registerImport(program: Command): void {
         process.stderr.write(JSON.stringify({ error: { code: 'missing_input', message: 'Provide --bibtex <string> or --file <path>.' } }) + '\n');
         process.exit(2);
       }
-      const bibtex: string = opts.file ? readFileSync(opts.file, 'utf8') : opts.bibtex;
+      if (opts.bibtex && opts.file) {
+        process.stderr.write(JSON.stringify({ error: { code: 'conflicting_input', message: 'Pass --bibtex <string> or --file <path>, not both.' } }) + '\n');
+        process.exit(2);
+      }
+      let bibtex: string;
+      try {
+        bibtex = opts.file ? readFileSync(opts.file, 'utf8') : opts.bibtex as string;
+      } catch (e) {
+        process.stderr.write(JSON.stringify({ error: { code: 'file_read_error', message: `Cannot read file: ${String(e)}` } }) + '\n');
+        process.exit(2);
+      }
       const client = resolveClient(g.apiKey);
       await run(() => handleImportBibtex(client, opts.vault, bibtex, opts.tags, g.table ?? false));
     });

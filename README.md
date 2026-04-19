@@ -3,9 +3,19 @@
 > command-line execution layer for the [refhub.io](https://refhub.io) API.  
 > manage vaults, papers, tags, and relations — scriptable, pipeable, agent-ready.
 
+[![npm](https://img.shields.io/npm/v/@refhub/cli?style=flat-square)](https://www.npmjs.com/package/@refhub/cli)
+
 ---
 
 ## // install
+
+```bash
+npm install -g @refhub/cli
+```
+
+**requires** node ≥ 18.
+
+### install from source
 
 ```bash
 git clone https://github.com/refhub/refhub-cli
@@ -14,10 +24,6 @@ npm install
 npm run build
 npm link
 ```
-
-`npm link` makes `refhub` available globally without publishing to npm.
-
-**requires** node ≥ 18.
 
 ---
 

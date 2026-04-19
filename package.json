@@ -12,6 +12,10 @@
     "smoke": "tsx scripts/smoke.ts",
     "dev": "tsx src/index.ts"
   },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",

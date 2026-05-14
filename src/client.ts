@@ -251,6 +251,95 @@ export class RefHubClient {
   }
 }
 
+// ── Management client (session JWT) ──────────────────────────────────────────
+
+export interface DoiMetadata {
+  title: string;
+  authors: string[];
+  year?: number;
+  journal?: string;
+  doi: string;
+  url: string;
+  abstract?: string;
+  type: string;
+}
+
+export interface PdfUploadResult {
+  attempted: boolean;
+  stored: boolean;
+  provider: string;
+  fileId?: string;
+  folderId?: string;
+  folderName?: string;
+  pdfUrl?: string;
+  sourceUrl?: string | null;
+}
+
+export class ManagementClient {
+  private readonly baseUrl = 'https://refhub-api.netlify.app/api/v1';
+  private readonly jwt: string;
+
+  constructor(jwt: string) {
+    this.jwt = jwt;
+  }
+
+  private async req<T>(method: string, path: string, body?: unknown, contentType = 'application/json'): Promise<T> {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.jwt}`,
+      'Content-Type': contentType,
+    };
+
+    let fetchBody: BodyInit | undefined;
+    if (body !== undefined) {
+      fetchBody = body instanceof Buffer ? body : JSON.stringify(body);
+    }
+
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method,
+      headers,
+      body: fetchBody,
+    });
+
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({})) as Record<string, unknown>;
+      const err = (payload['error'] ?? {}) as Record<string, unknown>;
+      throw new RefHubError(
+        res.status,
+        String(err['code'] ?? 'unknown_error'),
+        String(err['message'] ?? `HTTP ${res.status}`),
+        String((payload['meta'] as Record<string, unknown>)?.['request_id'] ?? ''),
+      );
+    }
+
+    return res.json() as Promise<T>;
+  }
+
+  async doiMetadata(doi: string): Promise<DoiMetadata | null> {
+    const result = await this.req<ApiResponse<DoiMetadata | null>>('POST', '/doi-metadata', { doi });
+    return result.data;
+  }
+
+  async uploadPublicationPdf(publicationId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
+    return this.req<ApiResponse<PdfUploadResult>>(
+      'POST',
+      `/publications/${encodeURIComponent(publicationId)}/pdf`,
+      pdfBuffer,
+      'application/pdf',
+    );
+  }
+}
+
+export function resolveManagementClient(jwt?: string): ManagementClient {
+  const token = jwt ?? process.env['REFHUB_JWT'];
+  if (!token) {
+    process.stderr.write(
+      JSON.stringify({ error: { code: 'missing_jwt', message: 'No session JWT found. Set REFHUB_JWT or pass --jwt <token>.' } }) + '\n',
+    );
+    process.exit(3);
+  }
+  return new ManagementClient(token);
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 export function resolveClient(apiKey?: string): RefHubClient {

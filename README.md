@@ -29,17 +29,23 @@ npm link
 
 ## // auth
 
+The CLI uses two credentials depending on the command:
+
+**API key** — required for all vault/item/tag/relation/import/export/audit commands:
 ```bash
 export REFHUB_API_KEY=your_key_here
-```
-
-or pass inline:
-
-```bash
+# or pass inline:
 refhub --api-key <key> vaults list
 ```
+Resolution order: `--api-key` flag → `REFHUB_API_KEY` env → exit 3.
 
-key resolution order: `--api-key` flag → `REFHUB_API_KEY` env → exit 3.
+**Session JWT** — required for `enrich` and `pdf upload` (management routes):
+```bash
+export REFHUB_JWT=your_supabase_session_jwt
+# or pass inline:
+refhub enrich --vault <id> --jwt <token>
+```
+Resolution order: `--jwt` flag → `REFHUB_JWT` env → exit 3.
 
 ---
 
@@ -52,6 +58,7 @@ refhub [--api-key <key>] [--table] <command> [subcommand] [options]
 | flag | behavior |
 |------|----------|
 | `--api-key` | override `REFHUB_API_KEY` |
+| `--jwt` | override `REFHUB_JWT` (used by `enrich` and `pdf upload`) |
 | `--table` | human-readable table output (default: json) |
 | `--version` | print version |
 | `--help` | available on every command and subcommand |
@@ -143,6 +150,29 @@ refhub export --vault <id> [--format json|bibtex]
 refhub audit --vault <id> [--since <ISO>] [--until <ISO>] [--limit] [--page]
 ```
 
+### enrich
+
+Enriches incomplete publication metadata by looking up each item's DOI against Semantic Scholar and patching missing fields (title, authors, year, abstract). Requires a session JWT.
+
+```bash
+refhub enrich --vault <id> [--item <itemId>] [--dry-run] [--jwt <token>]
+```
+
+- omit `--item` to process all items in the vault that have a DOI and missing fields
+- `--dry-run` shows what would be updated without writing anything
+- rate-limited to 1 req/s to respect Semantic Scholar's per-key limit
+
+### pdf
+
+Uploads a PDF file to the user's linked Google Drive and links it to a publication. Requires a session JWT and Google Drive connected to the account.
+
+```bash
+refhub pdf upload --publication <original_publication_id> --file <path/to/file.pdf> [--jwt <token>]
+```
+
+- `--publication` is the `original_publication_id` from the vault item (not the vault item's `id`)
+- max file size: 26 MB by default
+
 ---
 
 ## // exit codes
@@ -210,9 +240,9 @@ smoke test covers: `list_vaults` → `create_vault` → `tag_crud` → `relation
 
 ## // out of scope (v1)
 
-not exposed by the cli — these routes require a human session (jwt-only):
+not exposed by the cli:
 
-- api key management
-- google drive integration
-- semantic scholar recommendations / references
-- global audit log (non-vault-scoped)
+- api key management (jwt-only, no cli command)
+- google drive link/unlink (jwt-only, no cli command)
+- semantic scholar recommendations / references / citations / lookup (jwt-only, no cli command)
+- global audit log (jwt-only, non-vault-scoped, no cli command)

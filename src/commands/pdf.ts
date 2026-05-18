@@ -1,7 +1,7 @@
 // src/commands/pdf.ts
 import { readFileSync } from 'fs';
 import type { Command } from 'commander';
-import { resolveManagementClient, run } from '../client.js';
+import { ManagementClient, resolveManagementClient, run } from '../client.js';
 import { format } from '../format.js';
 
 export async function handlePdfUpload(

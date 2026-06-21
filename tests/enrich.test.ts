@@ -1,6 +1,6 @@
 // tests/enrich.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RefHubClient, ManagementClient } from '../src/client.js';
+import { RefHubClient } from '../src/client.js';
 import { enrichItem } from '../src/commands/enrich.js';
 import type { Item } from '../src/types.js';
 
@@ -34,11 +34,8 @@ const fullMeta = {
 
 describe('enrichItem', () => {
   let client: RefHubClient;
-  let mgmt: ManagementClient;
-
   beforeEach(() => {
     client = new RefHubClient('rhk_test');
-    mgmt = new ManagementClient('jwt_test');
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   });
 
@@ -49,13 +46,13 @@ describe('enrichItem', () => {
 
   it('returns skipped for items without a DOI', async () => {
     const item = makeItem({ doi: undefined });
-    const outcome = await enrichItem(item, mgmt, client, 'vault-1', false);
+    const outcome = await enrichItem(item, client, 'vault-1', false);
     expect(outcome).toBe('skipped');
   });
 
   it('returns no_missing_fields when all fields are present', async () => {
     const item = makeItem();
-    const outcome = await enrichItem(item, mgmt, client, 'vault-1', false);
+    const outcome = await enrichItem(item, client, 'vault-1', false);
     expect(outcome).toBe('no_missing_fields');
   });
 
@@ -65,7 +62,7 @@ describe('enrichItem', () => {
       json: () => Promise.resolve({ data: null }),
     }));
     const item = makeItem({ abstract: undefined });
-    const outcome = await enrichItem(item, mgmt, client, 'vault-1', false);
+    const outcome = await enrichItem(item, client, 'vault-1', false);
     expect(outcome).toBe('not_found');
   });
 
@@ -76,7 +73,7 @@ describe('enrichItem', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const item = makeItem({ abstract: undefined, year: undefined });
-    const outcome = await enrichItem(item, mgmt, client, 'vault-1', false);
+    const outcome = await enrichItem(item, client, 'vault-1', false);
 
     expect(outcome).toBe('enriched');
     const patchBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
@@ -94,7 +91,7 @@ describe('enrichItem', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const item = makeItem({ abstract: undefined });
-    const outcome = await enrichItem(item, mgmt, client, 'vault-1', true);
+    const outcome = await enrichItem(item, client, 'vault-1', true);
 
     expect(outcome).toBe('enriched');
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -107,7 +104,7 @@ describe('enrichItem', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const item = makeItem({ abstract: undefined });
-    await enrichItem(item, mgmt, client, 'vault-1', false);
+    await enrichItem(item, client, 'vault-1', false);
 
     const patchBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
     expect(Object.keys(patchBody)).toEqual(['abstract']);

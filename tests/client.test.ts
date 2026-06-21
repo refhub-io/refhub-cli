@@ -87,3 +87,27 @@ describe('resolveClient', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('RefHubClient API-key agent routes', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('uses namespaced Semantic Scholar DOI metadata route with API key', async () => {
+    mockFetch({ data: null });
+    const client = new RefHubClient('rhk_test_key');
+    await client.doiMetadata('10.1/x');
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+    expect(url).toContain('/semantic-scholar/doi-metadata');
+    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer rhk_test_key');
+  });
+
+  it('uses per_page and tag query names for search/list contracts', async () => {
+    mockFetch({ data: [] });
+    const client = new RefHubClient('rhk_test_key');
+    await client.searchItems('vault-1', { tag_id: 'tag-1', limit: 10, doi: '10.1/x' });
+    const [url] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get('tag')).toBe('tag-1');
+    expect(parsed.searchParams.get('per_page')).toBe('10');
+    expect(parsed.searchParams.get('doi')).toBe('10.1/x');
+  });
+});

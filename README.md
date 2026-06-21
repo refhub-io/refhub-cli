@@ -29,7 +29,7 @@ npm link
 
 ## // auth
 
-The CLI uses two credentials depending on the command:
+The CLI uses a RefHub API key for normal agent/runtime work:
 
 **API key** — required for all vault/item/tag/relation/import/export/audit commands:
 ```bash
@@ -39,13 +39,7 @@ refhub --api-key <key> vaults list
 ```
 Resolution order: `--api-key` flag → `REFHUB_API_KEY` env → exit 3.
 
-**Session JWT** — required for `enrich` and `pdf upload` (management routes):
-```bash
-export REFHUB_JWT=your_supabase_session_jwt
-# or pass inline:
-refhub enrich --vault <id> --jwt <token>
-```
-Resolution order: `--jwt` flag → `REFHUB_JWT` env → exit 3.
+Session JWTs are no longer required for CLI enrichment or item PDF upload. Browser/account setup flows still use RefHub web auth: API key creation/revocation and Google Drive connect/disconnect.
 
 ---
 
@@ -58,7 +52,6 @@ refhub [--api-key <key>] [--table] <command> [subcommand] [options]
 | flag | behavior |
 |------|----------|
 | `--api-key` | override `REFHUB_API_KEY` |
-| `--jwt` | override `REFHUB_JWT` (used by `enrich` and `pdf upload`) |
 | `--table` | human-readable table output (default: json) |
 | `--version` | print version |
 | `--help` | available on every command and subcommand |
@@ -150,27 +143,44 @@ refhub export --vault <id> [--format json|bibtex]
 refhub audit --vault <id> [--since <ISO>] [--until <ISO>] [--limit] [--page]
 ```
 
-### enrich
 
-Enriches incomplete publication metadata by looking up each item's DOI against Semantic Scholar and patching missing fields (title, authors, year, abstract). Requires a session JWT.
+### discover
+
+Semantic Scholar discovery/enrichment through API-key routes (`vaults:read`).
 
 ```bash
-refhub enrich --vault <id> [--item <itemId>] [--dry-run] [--jwt <token>]
+refhub discover search --query "visual analytics" [--limit 10]
+refhub discover lookup (--doi <doi> | --title <title>)
+refhub discover recommendations --paper <paperId-or-DOI:id> [--limit]
+refhub discover related --paper <paperId-or-DOI:id> [--limit]
+refhub discover references --paper <paperId-or-DOI:id> [--limit]
+refhub discover citations --paper <paperId-or-DOI:id> [--limit]
+refhub discover cited-by --paper <paperId-or-DOI:id> [--limit]
+refhub discover add --vault <id> --file <semantic-scholar-results.json> [--idempotency-key]
+```
+
+`discover add` expects a JSON array of normalized Semantic Scholar paper objects, such as the `.data` returned by `discover search/recommendations/references/citations`, and upserts them into the target vault. Open-access PDF URLs are mapped to `pdf_url` where present.
+
+### enrich
+
+Enriches incomplete publication metadata by looking up each item's DOI against Semantic Scholar and patching missing fields (title, authors, year, abstract). Requires only the RefHub API key (`vaults:read` for lookup plus `vaults:write` when patching items).
+
+```bash
+refhub enrich --vault <id> [--item <itemId>] [--dry-run]
 ```
 
 - omit `--item` to process all items in the vault that have a DOI and missing fields
 - `--dry-run` shows what would be updated without writing anything
-- rate-limited to 1 req/s to respect Semantic Scholar's per-key limit
+- rate-limited client-side to 1 req/s; backend cache/rate-limit/stale fallback also applies
 
 ### pdf
 
-Uploads a PDF file to the user's linked Google Drive and links it to a publication. Requires a session JWT and Google Drive connected to the account.
+Uploads a PDF file to the user's linked Google Drive and links it to a vault item. Requires only the RefHub API key (`vaults:write`) after Google Drive has been connected in the RefHub web account UI.
 
 ```bash
-refhub pdf upload --publication <original_publication_id> --file <path/to/file.pdf> [--jwt <token>]
+refhub pdf upload --vault <vaultId> --item <itemId> --file <path/to/file.pdf>
 ```
 
-- `--publication` is the `original_publication_id` from the vault item (not the vault item's `id`)
 - max file size: 26 MB by default
 
 ---
@@ -243,6 +253,5 @@ smoke test covers: `list_vaults` → `create_vault` → `tag_crud` → `relation
 not exposed by the cli:
 
 - api key management (jwt-only, no cli command)
-- google drive link/unlink (jwt-only, no cli command)
-- semantic scholar recommendations / references / citations / lookup (jwt-only, no cli command)
+- google drive link/unlink setup (browser/JWT-only, no cli command)
 - global audit log (jwt-only, non-vault-scoped, no cli command)

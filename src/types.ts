@@ -109,3 +109,33 @@ export interface AuditEntry {
 export interface ApiResponse<T> {
   data: T;
 }
+
+
+export interface SemanticScholarAuthor {
+  author_id?: string | null;
+  name?: string | null;
+}
+
+export interface SemanticScholarPaper {
+  paper_id: string | null;
+  external_ids?: Record<string, string>;
+  title?: string | null;
+  abstract?: string | null;
+  year?: number | null;
+  venue?: string | null;
+  url?: string | null;
+  citation_count?: number | null;
+  open_access_pdf_url?: string | null;
+  authors?: SemanticScholarAuthor[];
+}
+
+export interface SemanticScholarDoiMetadata {
+  title: string;
+  authors: string[];
+  year?: number;
+  journal?: string;
+  doi: string;
+  url: string;
+  abstract?: string;
+  type: string;
+}

@@ -1,11 +1,10 @@
 // src/commands/enrich.ts
 import type { Command } from 'commander';
-import { RefHubClient, ManagementClient, resolveClient, resolveManagementClient, run } from '../client.js';
+import { RefHubClient, resolveClient, run } from '../client.js';
 import type { Item } from '../types.js';
 
 export async function enrichItem(
   item: Item,
-  mgmt: ManagementClient,
   client: RefHubClient,
   vaultId: string,
   dryRun: boolean,
@@ -20,7 +19,7 @@ export async function enrichItem(
 
   if (missing.length === 0) return 'no_missing_fields';
 
-  const meta = await mgmt.doiMetadata(item.doi);
+  const meta = await client.doiMetadata(item.doi);
   if (!meta) return 'not_found';
 
   const patch: Record<string, unknown> = {};
@@ -45,11 +44,9 @@ export function registerEnrich(program: Command): void {
     .requiredOption('--vault <id>', 'vault to enrich')
     .option('--item <itemId>', 'enrich a single item instead of the whole vault')
     .option('--dry-run', 'show what would be updated without writing')
-    .option('--jwt <token>', 'session JWT (overrides REFHUB_JWT env var)')
     .action(async (opts, cmd) => {
       const g = cmd.optsWithGlobals();
       const client = resolveClient(g.apiKey);
-      const mgmt = resolveManagementClient(opts.jwt);
       const dryRun = opts.dryRun ?? false;
 
       await run(async () => {
@@ -73,7 +70,7 @@ export function registerEnrich(program: Command): void {
         const enriched: string[] = [];
 
         for (const item of withDoi) {
-          const outcome = await enrichItem(item, mgmt, client, opts.vault, dryRun);
+          const outcome = await enrichItem(item, client, opts.vault, dryRun);
           counts[outcome]++;
           if (outcome === 'enriched') enriched.push(item.id);
           // 1 req/s to respect Semantic Scholar rate limit

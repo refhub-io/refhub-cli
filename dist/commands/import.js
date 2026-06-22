@@ -1,0 +1,74 @@
+// src/commands/import.ts
+import { readFileSync } from 'fs';
+import { resolveClient, run } from '../client.js';
+import { format } from '../format.js';
+function parseTags(tagsCsv) {
+    if (!tagsCsv)
+        return [];
+    return tagsCsv.split(',').map((t) => t.trim());
+}
+export async function handleImportDoi(client, vaultId, doi, tagsCsv, tableMode) {
+    const result = await client.importDoi(vaultId, doi, parseTags(tagsCsv));
+    format(result, tableMode);
+}
+export async function handleImportBibtex(client, vaultId, bibtex, tagsCsv, tableMode) {
+    const result = await client.importBibtex(vaultId, bibtex, parseTags(tagsCsv));
+    format(result, tableMode);
+}
+export async function handleImportUrl(client, vaultId, url, tagsCsv, tableMode) {
+    const result = await client.importUrl(vaultId, url, parseTags(tagsCsv));
+    format(result, tableMode);
+}
+export function registerImport(program) {
+    const imp = program.command('import').description('Import references into a vault');
+    imp
+        .command('doi')
+        .description('Import a reference by DOI')
+        .requiredOption('--vault <id>')
+        .requiredOption('--doi <doi>')
+        .option('--tags <ids>', 'comma-separated tag IDs to attach')
+        .action(async (opts, cmd) => {
+        const g = cmd.optsWithGlobals();
+        const client = resolveClient(g.apiKey);
+        await run(() => handleImportDoi(client, opts.vault, opts.doi, opts.tags, g.table ?? false));
+    });
+    imp
+        .command('bibtex')
+        .description('Import references from a BibTeX string or file')
+        .requiredOption('--vault <id>')
+        .option('--bibtex <string>', 'inline BibTeX string')
+        .option('--file <path>', 'path to .bib file')
+        .option('--tags <ids>', 'comma-separated tag IDs to attach')
+        .action(async (opts, cmd) => {
+        const g = cmd.optsWithGlobals();
+        if (!opts.bibtex && !opts.file) {
+            process.stderr.write(JSON.stringify({ error: { code: 'missing_input', message: 'Provide --bibtex <string> or --file <path>.' } }) + '\n');
+            process.exit(2);
+        }
+        if (opts.bibtex && opts.file) {
+            process.stderr.write(JSON.stringify({ error: { code: 'conflicting_input', message: 'Pass --bibtex <string> or --file <path>, not both.' } }) + '\n');
+            process.exit(2);
+        }
+        let bibtex;
+        try {
+            bibtex = opts.file ? readFileSync(opts.file, 'utf8') : opts.bibtex;
+        }
+        catch (e) {
+            process.stderr.write(JSON.stringify({ error: { code: 'file_read_error', message: `Cannot read file: ${String(e)}` } }) + '\n');
+            process.exit(2);
+        }
+        const client = resolveClient(g.apiKey);
+        await run(() => handleImportBibtex(client, opts.vault, bibtex, opts.tags, g.table ?? false));
+    });
+    imp
+        .command('url')
+        .description('Import a reference from a URL (Open Graph scrape)')
+        .requiredOption('--vault <id>')
+        .requiredOption('--url <url>')
+        .option('--tags <ids>', 'comma-separated tag IDs to attach')
+        .action(async (opts, cmd) => {
+        const g = cmd.optsWithGlobals();
+        const client = resolveClient(g.apiKey);
+        await run(() => handleImportUrl(client, opts.vault, opts.url, opts.tags, g.table ?? false));
+    });
+}

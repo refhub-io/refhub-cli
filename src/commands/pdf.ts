@@ -1,12 +1,13 @@
 // src/commands/pdf.ts
 import { readFileSync } from 'fs';
 import type { Command } from 'commander';
-import { ManagementClient, resolveManagementClient, run } from '../client.js';
+import { RefHubClient, resolveClient, run } from '../client.js';
 import { format } from '../format.js';
 
 export async function handlePdfUpload(
-  mgmt: ManagementClient,
-  publicationId: string,
+  client: RefHubClient,
+  vaultId: string,
+  itemId: string,
   filePath: string,
   tableMode: boolean,
 ): Promise<void> {
@@ -17,22 +18,22 @@ export async function handlePdfUpload(
     process.stderr.write(JSON.stringify({ error: { code: 'file_read_error', message: `Cannot read file: ${String(e)}` } }) + '\n');
     process.exit(2);
   }
-  const result = await mgmt.uploadPublicationPdf(publicationId, pdfBuffer);
+  const result = await client.uploadItemPdf(vaultId, itemId, pdfBuffer);
   format(result, tableMode);
 }
 
 export function registerPdf(program: Command): void {
-  const pdf = program.command('pdf').description('Upload a PDF to Google Drive for a publication');
+  const pdf = program.command('pdf').description('Upload a PDF to Google Drive for a vault item');
 
   pdf
     .command('upload')
-    .description('Upload a PDF file and link it to a publication')
-    .requiredOption('--publication <id>', 'publication ID (original_publication_id from vault item)')
+    .description('Upload a PDF file and link it to a vault item')
+    .requiredOption('--vault <id>', 'vault ID')
+    .requiredOption('--item <id>', 'vault item ID')
     .requiredOption('--file <path>', 'path to PDF file')
-    .option('--jwt <token>', 'session JWT (overrides REFHUB_JWT env var)')
     .action(async (opts, cmd) => {
       const g = cmd.optsWithGlobals();
-      const mgmt = resolveManagementClient(opts.jwt);
-      await run(() => handlePdfUpload(mgmt, opts.publication, opts.file, g.table ?? false));
+      const client = resolveClient(g.apiKey);
+      await run(() => handlePdfUpload(client, opts.vault, opts.item, opts.file, g.table ?? false));
     });
 }

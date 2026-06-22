@@ -3,6 +3,7 @@ import type {
   ApiResponse, Vault, VaultDetail, Share,
   Item, UpsertResult, PreviewResult,
   Tag, Relation, BibTeXImportResult, AuditEntry, VaultStats, RelationType,
+  SemanticScholarPaper, SemanticScholarDoiMetadata,
 } from './types.js';
 
 export class RefHubError extends Error {
@@ -51,8 +52,29 @@ export class RefHubClient {
         res.status,
         String(err['code'] ?? 'unknown_error'),
         String(err['message'] ?? `HTTP ${res.status}`),
-        String(err['request_id'] ?? ''),
-        typeof payload['retry_after_seconds'] === 'number' ? payload['retry_after_seconds'] : undefined,
+        String((payload['meta'] as Record<string, unknown> | undefined)?.['request_id'] ?? err['request_id'] ?? ''),
+        typeof (err['details'] as Record<string, unknown> | undefined)?.['retry_after_seconds'] === 'number'
+          ? Number((err['details'] as Record<string, unknown>)['retry_after_seconds'])
+          : typeof payload['retry_after_seconds'] === 'number' ? payload['retry_after_seconds'] : undefined,
+      );
+    }
+    return res.json() as Promise<T>;
+  }
+
+  private async reqBinary<T>(method: string, path: string, body: Buffer, contentType = 'application/octet-stream'): Promise<T> {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method,
+      headers: { ...this.headers, 'Content-Type': contentType },
+      body: body as unknown as BodyInit,
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({})) as Record<string, unknown>;
+      const err = (payload['error'] ?? {}) as Record<string, unknown>;
+      throw new RefHubError(
+        res.status,
+        String(err['code'] ?? 'unknown_error'),
+        String(err['message'] ?? `HTTP ${res.status}`),
+        String((payload['meta'] as Record<string, unknown>)?.['request_id'] ?? err['request_id'] ?? ''),
       );
     }
     return res.json() as Promise<T>;
@@ -67,7 +89,7 @@ export class RefHubClient {
         res.status,
         String(err['code'] ?? 'unknown_error'),
         String(err['message'] ?? `HTTP ${res.status}`),
-        String(err['request_id'] ?? ''),
+        String((payload['meta'] as Record<string, unknown> | undefined)?.['request_id'] ?? err['request_id'] ?? ''),
       );
     }
     return res.text();
@@ -120,7 +142,7 @@ export class RefHubClient {
   listItems(vaultId: string, params: { page?: number; limit?: number } = {}) {
     const q = new URLSearchParams();
     if (params.page !== undefined) q.set('page', String(params.page));
-    if (params.limit !== undefined) q.set('limit', String(params.limit));
+    if (params.limit !== undefined) q.set('per_page', String(params.limit));
     const qs = q.toString() ? `?${q}` : '';
     return this.req<ApiResponse<Item[]>>('GET', `/vaults/${vaultId}/items${qs}`);
   }
@@ -158,9 +180,9 @@ export class RefHubClient {
     if (params.author) q.set('author', params.author);
     if (params.year !== undefined) q.set('year', String(params.year));
     if (params.doi) q.set('doi', params.doi);
-    if (params.tag_id) q.set('tag_id', params.tag_id);
+    if (params.tag_id) q.set('tag', params.tag_id);
     if (params.page !== undefined) q.set('page', String(params.page));
-    if (params.limit !== undefined) q.set('limit', String(params.limit));
+    if (params.limit !== undefined) q.set('per_page', String(params.limit));
     const qs = q.toString() ? `?${q}` : '';
     return this.req<ApiResponse<Item[]>>('GET', `/vaults/${vaultId}/search${qs}`);
   }
@@ -244,24 +266,55 @@ export class RefHubClient {
     const q = new URLSearchParams();
     if (params.since) q.set('since', params.since);
     if (params.until) q.set('until', params.until);
-    if (params.limit !== undefined) q.set('limit', String(params.limit));
+    if (params.limit !== undefined) q.set('per_page', String(params.limit));
     if (params.page !== undefined) q.set('page', String(params.page));
     const qs = q.toString() ? `?${q}` : '';
     return this.req<ApiResponse<AuditEntry[]>>('GET', `/vaults/${vaultId}/audit${qs}`);
   }
-}
 
-// ── Management client (session JWT) ──────────────────────────────────────────
+  // ── Semantic Scholar discovery/enrichment ──────────────────────────────────
 
-export interface DoiMetadata {
-  title: string;
-  authors: string[];
-  year?: number;
-  journal?: string;
-  doi: string;
-  url: string;
-  abstract?: string;
-  type: string;
+  doiMetadata(doi: string): Promise<SemanticScholarDoiMetadata | null> {
+    return this.req<ApiResponse<SemanticScholarDoiMetadata | null>>(
+      'POST',
+      '/semantic-scholar/doi-metadata',
+      { doi },
+    ).then((result) => result.data);
+  }
+
+  semanticScholarLookup(body: { doi?: string; title?: string }) {
+    return this.req<ApiResponse<{ paper_id: string }>>(
+      'POST',
+      '/semantic-scholar/lookup',
+      body,
+    );
+  }
+
+  semanticScholarSearch(query: string, limit?: number) {
+    return this.req<ApiResponse<SemanticScholarPaper[]>>(
+      'POST',
+      '/semantic-scholar/search',
+      { query, ...(limit !== undefined ? { limit } : {}) },
+    );
+  }
+
+  semanticScholarPaperList(kind: 'recommendations' | 'related' | 'references' | 'citations' | 'cited-by', paperId: string, limit?: number) {
+    return this.req<ApiResponse<SemanticScholarPaper[]>>(
+      'POST',
+      `/semantic-scholar/${kind}`,
+      { paper_id: paperId, ...(limit !== undefined ? { limit } : {}) },
+    );
+  }
+
+  uploadItemPdf(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
+    return this.reqBinary<ApiResponse<PdfUploadResult>>(
+      'POST',
+      `/vaults/${encodeURIComponent(vaultId)}/items/${encodeURIComponent(itemId)}/pdf`,
+      pdfBuffer,
+      'application/pdf',
+    );
+  }
+
 }
 
 export interface PdfUploadResult {
@@ -273,71 +326,6 @@ export interface PdfUploadResult {
   folderName?: string;
   pdfUrl?: string;
   sourceUrl?: string | null;
-}
-
-export class ManagementClient {
-  private readonly baseUrl = 'https://refhub-api.netlify.app/api/v1';
-  private readonly jwt: string;
-
-  constructor(jwt: string) {
-    this.jwt = jwt;
-  }
-
-  private async req<T>(method: string, path: string, body?: unknown, contentType = 'application/json'): Promise<T> {
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.jwt}`,
-      'Content-Type': contentType,
-    };
-
-    let fetchBody: BodyInit | undefined;
-    if (body !== undefined) {
-      fetchBody = body instanceof Buffer ? body : JSON.stringify(body);
-    }
-
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      method,
-      headers,
-      body: fetchBody,
-    });
-
-    if (!res.ok) {
-      const payload = await res.json().catch(() => ({})) as Record<string, unknown>;
-      const err = (payload['error'] ?? {}) as Record<string, unknown>;
-      throw new RefHubError(
-        res.status,
-        String(err['code'] ?? 'unknown_error'),
-        String(err['message'] ?? `HTTP ${res.status}`),
-        String((payload['meta'] as Record<string, unknown>)?.['request_id'] ?? ''),
-      );
-    }
-
-    return res.json() as Promise<T>;
-  }
-
-  async doiMetadata(doi: string): Promise<DoiMetadata | null> {
-    const result = await this.req<ApiResponse<DoiMetadata | null>>('POST', '/doi-metadata', { doi });
-    return result.data;
-  }
-
-  async uploadPublicationPdf(publicationId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
-    return this.req<ApiResponse<PdfUploadResult>>(
-      'POST',
-      `/publications/${encodeURIComponent(publicationId)}/pdf`,
-      pdfBuffer,
-      'application/pdf',
-    );
-  }
-}
-
-export function resolveManagementClient(jwt?: string): ManagementClient {
-  const token = jwt ?? process.env['REFHUB_JWT'];
-  if (!token) {
-    process.stderr.write(
-      JSON.stringify({ error: { code: 'missing_jwt', message: 'No session JWT found. Set REFHUB_JWT or pass --jwt <token>.' } }) + '\n',
-    );
-    process.exit(3);
-  }
-  return new ManagementClient(token);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

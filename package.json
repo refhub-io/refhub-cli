@@ -3,16 +3,25 @@
   "version": "1.2.0",
   "description": "refhub CLI execution layer for agent skills",
   "type": "module",
-  "engines": { "node": ">=18" },
-  "bin": { "refhub": "dist/index.js" },
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "refhub": "dist/index.js"
+  },
   "scripts": {
     "build": "tsc && node -e \"import('fs').then(fs=>{ const f='dist/index.js'; fs.writeFileSync(f,'#!/usr/bin/env node\\n'+fs.readFileSync(f,'utf8')); fs.chmodSync(f,'755'); })\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "smoke": "tsx scripts/smoke.ts",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "lint:types": "tsc --noEmit",
+    "lint:eslint": "eslint src",
+    "lint": "npm run lint:types && npm run lint:eslint"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -23,8 +32,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "eslint": "^10.5.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",
+    "typescript-eslint": "^8.62.0",
     "vitest": "^1.6.0"
   }
 }

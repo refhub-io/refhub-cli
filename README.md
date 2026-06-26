@@ -233,6 +233,10 @@ npm run build    # tsc → dist/
 
 smoke test covers: `list_vaults` → `create_vault` → `tag_crud` → `relation_crud` → `export` → `delete_vault`.
 
+### releases
+
+Releases are published from GitHub Actions via npm Trusted Publishing. See [RELEASE.md](./RELEASE.md) for the version bump, tag, and publish procedure.
+
 ---
 
 ## // stack

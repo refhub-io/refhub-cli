@@ -29,6 +29,8 @@ export class RefHubError extends Error {
 }
 
 export class RefHubClient {
+  static readonly RAW_PDF_UPLOAD_LIMIT_BYTES = 6 * 1024 * 1024;
+
   private readonly baseUrl = 'https://refhub-api.netlify.app/api/v1';
   private readonly headers: Record<string, string>;
 
@@ -306,13 +308,75 @@ export class RefHubClient {
     );
   }
 
-  uploadItemPdf(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
+  uploadItemPdfRaw(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
     return this.reqBinary<ApiResponse<PdfUploadResult>>(
       'POST',
       `/vaults/${encodeURIComponent(vaultId)}/items/${encodeURIComponent(itemId)}/pdf`,
       pdfBuffer,
       'application/pdf',
     );
+  }
+
+  createItemPdfUploadSession(vaultId: string, itemId: string): Promise<ApiResponse<PdfUploadSession>> {
+    return this.req<ApiResponse<PdfUploadSession>>(
+      'POST',
+      `/vaults/${encodeURIComponent(vaultId)}/items/${encodeURIComponent(itemId)}/pdf/session`,
+      {},
+    );
+  }
+
+  completeItemPdfUpload(
+    vaultId: string,
+    itemId: string,
+    body: { file_id: string; web_view_link?: string | null; source_url?: string | null },
+  ): Promise<ApiResponse<PdfUploadResult>> {
+    return this.req<ApiResponse<PdfUploadResult>>(
+      'POST',
+      `/vaults/${encodeURIComponent(vaultId)}/items/${encodeURIComponent(itemId)}/pdf/complete`,
+      body,
+    );
+  }
+
+  async uploadItemPdfResumable(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
+    const session = await this.createItemPdfUploadSession(vaultId, itemId);
+    const driveResponse = await fetch(session.data.upload_url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Length': String(pdfBuffer.length),
+      },
+      body: pdfBuffer as unknown as BodyInit,
+    });
+
+    if (!driveResponse.ok) {
+      const body = await driveResponse.text().catch(() => '');
+      throw new Error(`Google Drive resumable upload failed (${driveResponse.status})${body ? `: ${body}` : ''}`);
+    }
+
+    const driveUpload = await driveResponse.json().catch(() => ({})) as DriveUploadMetadata;
+    if (!driveUpload.id) {
+      throw new Error('Google Drive upload completed without returning a file id');
+    }
+
+    return this.completeItemPdfUpload(vaultId, itemId, {
+      file_id: driveUpload.id,
+      web_view_link: driveUpload.webViewLink ?? null,
+    });
+  }
+
+  async uploadItemPdf(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
+    if (pdfBuffer.length > RefHubClient.RAW_PDF_UPLOAD_LIMIT_BYTES) {
+      return this.uploadItemPdfResumable(vaultId, itemId, pdfBuffer);
+    }
+
+    try {
+      return await this.uploadItemPdfRaw(vaultId, itemId, pdfBuffer);
+    } catch (err) {
+      if (err instanceof RefHubError && err.status === 413 && err.code === 'pdf_upload_too_large_for_api') {
+        return this.uploadItemPdfResumable(vaultId, itemId, pdfBuffer);
+      }
+      throw err;
+    }
   }
 
 }
@@ -326,6 +390,18 @@ export interface PdfUploadResult {
   folderName?: string;
   pdfUrl?: string;
   sourceUrl?: string | null;
+}
+
+export interface PdfUploadSession {
+  upload_url: string;
+  file_name?: string;
+}
+
+interface DriveUploadMetadata {
+  id?: string;
+  name?: string;
+  webViewLink?: string;
+  webContentLink?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

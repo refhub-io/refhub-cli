@@ -181,7 +181,10 @@ Uploads a PDF file to the user's linked Google Drive and links it to a vault ite
 refhub pdf upload --vault <vaultId> --item <itemId> --file <path/to/file.pdf>
 ```
 
-- max file size: 26 MB by default
+- small PDFs use the raw API-key upload route: `POST /api/v1/vaults/:vaultId/items/:itemId/pdf`
+- raw API uploads are capped by the backend at the smallest of `REFHUB_API_MAX_BODY_BYTES`, `GOOGLE_DRIVE_MAX_UPLOAD_BYTES`, and the Netlify synchronous Function ceiling (6 MiB); oversized raw requests return structured `413 pdf_upload_too_large_for_api`
+- larger PDFs use the API-key resumable Drive flow: `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/session`, direct `PUT` of the PDF bytes to the returned Google Drive `upload_url`, then `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/complete`
+- max file size: 26 MB by default, matching the backend Google Drive upload limit
 
 ---
 

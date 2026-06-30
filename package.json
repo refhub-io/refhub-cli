@@ -3,6 +3,14 @@
   "version": "1.2.1",
   "description": "refhub CLI execution layer for agent skills",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/refhub-io/refhub-cli"
+  },
+  "homepage": "https://github.com/refhub-io/refhub-cli#readme",
+  "bugs": {
+    "url": "https://github.com/refhub-io/refhub-cli/issues"
+  },
   "engines": { "node": ">=18" },
   "bin": { "refhub": "dist/index.js" },
   "scripts": {

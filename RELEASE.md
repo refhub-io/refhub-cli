@@ -15,10 +15,10 @@ In the npm package settings for `@refhub/cli`, add a Trusted Publisher for this 
 1. Update `package.json` and `package-lock.json` to the new semver version.
 2. Merge the version bump to `main` after CI passes.
 3. After the `CI` workflow succeeds on `main`, the `Release` workflow runs automatically.
-4. If the package version is not already on npm, `Release` builds the CLI, checks the package tarball with `npm pack --dry-run`, publishes to npm with provenance, and creates the matching GitHub release/tag.
+4. If the package version is not already on npm, `Release` builds the CLI, checks the package tarball with `npm pack --dry-run`, and publishes to npm with provenance.
 
 If `@refhub/cli@X.Y.Z` already exists on npm, the workflow exits successfully without publishing again.
 
-The GitHub release tag is generated from the package version, for example package version `1.2.3` creates tag `v1.2.3`.
+GitHub release/tag creation is intentionally not automated because the repository/org currently does not grant `GITHUB_TOKEN` write access. If that policy changes later, the release workflow can create tag `vX.Y.Z` from the package version.
 
 The `Release` workflow can also be started manually from GitHub Actions via `workflow_dispatch`; the same npm-version guard still applies.

@@ -18,7 +18,7 @@ npm install -g @refhub/cli
 ### install from source
 
 ```bash
-git clone https://github.com/refhub/refhub-cli
+git clone https://github.com/refhub-io/refhub-cli
 cd refhub-cli
 npm install
 npm run build

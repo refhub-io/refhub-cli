@@ -2,6 +2,8 @@
 
 `@refhub/cli` is published to npm by GitHub Actions using npm Trusted Publishing. Do not publish locally with an npm token.
 
+The release workflow uses Node.js 24 so the bundled npm CLI supports Trusted Publishing/OIDC.
+
 ## One-time npm setup
 
 In the npm package settings for `@refhub/cli`, add a Trusted Publisher for this GitHub Actions workflow:

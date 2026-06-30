@@ -1,6 +1,6 @@
 {
   "name": "@refhub/cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "refhub CLI execution layer for agent skills",
   "type": "module",
   "engines": { "node": ">=18" },

@@ -7,6 +7,7 @@ export declare class RefHubError extends Error {
     constructor(status: number, code: string, message: string, request_id: string, retry_after_seconds?: number);
 }
 export declare class RefHubClient {
+    static readonly RAW_PDF_UPLOAD_LIMIT_BYTES: number;
     private readonly baseUrl;
     private readonly headers;
     constructor(apiKey: string);
@@ -141,6 +142,14 @@ export declare class RefHubClient {
     }>>;
     semanticScholarSearch(query: string, limit?: number): Promise<ApiResponse<SemanticScholarPaper[]>>;
     semanticScholarPaperList(kind: 'recommendations' | 'related' | 'references' | 'citations' | 'cited-by', paperId: string, limit?: number): Promise<ApiResponse<SemanticScholarPaper[]>>;
+    uploadItemPdfRaw(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>>;
+    createItemPdfUploadSession(vaultId: string, itemId: string): Promise<ApiResponse<PdfUploadSession>>;
+    completeItemPdfUpload(vaultId: string, itemId: string, body: {
+        file_id: string;
+        web_view_link?: string | null;
+        source_url?: string | null;
+    }): Promise<ApiResponse<PdfUploadResult>>;
+    uploadItemPdfResumable(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>>;
     uploadItemPdf(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>>;
 }
 export interface PdfUploadResult {
@@ -152,6 +161,10 @@ export interface PdfUploadResult {
     folderName?: string;
     pdfUrl?: string;
     sourceUrl?: string | null;
+}
+export interface PdfUploadSession {
+    upload_url: string;
+    file_name?: string;
 }
 export declare function resolveClient(apiKey?: string): RefHubClient;
 export declare function run(fn: () => Promise<void>): Promise<void>;

@@ -61,6 +61,7 @@ export declare class RefHubClient {
         year?: number;
         doi?: string;
         tag_ids?: string[];
+        notes?: string;
     }>): Promise<ApiResponse<Item[]>>;
     updateItem(vaultId: string, itemId: string, body: {
         title?: string;
@@ -68,6 +69,7 @@ export declare class RefHubClient {
         year?: number;
         doi?: string;
         tag_ids?: string[];
+        notes?: string;
     }): Promise<ApiResponse<Item>>;
     deleteItem(vaultId: string, itemId: string): Promise<ApiResponse<{
         id: string;

@@ -22,6 +22,7 @@ export interface Item {
     doi?: string;
     bibtex_key?: string;
     abstract?: string;
+    notes?: string;
     tag_ids: string[];
     version: number;
     created_at: string;

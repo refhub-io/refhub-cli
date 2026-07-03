@@ -53,6 +53,20 @@ describe('item commands', () => {
     expect(body.items[0].title).toBe('My Paper');
   });
 
+  it('handleItemAdd sends notes when --notes passed', async () => {
+    mockFetch({ data: [{ id: 'i1', title: 'My Paper' }] });
+    await handleItemAdd(client, 'v1', { title: 'My Paper', authors: undefined, year: undefined, doi: undefined, tags: undefined, notes: 'follow up on section 4' }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body.items[0].notes).toBe('follow up on section 4');
+  });
+
+  it('handleItemUpdate sends notes when --notes passed', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, notes: 'revised per reviewer 2' }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body.notes).toBe('revised per reviewer 2');
+  });
+
   it('handleItemUpdate warns about tag replacement when --tags passed', async () => {
     mockFetch({ data: { id: 'i1' } });
     const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);

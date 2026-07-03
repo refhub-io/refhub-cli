@@ -36,7 +36,7 @@ export async function handleItemAdd(
   if (opts.doi) item['doi'] = opts.doi;
   if (opts.tags) item['tag_ids'] = opts.tags.split(',').map((t) => t.trim());
   if (opts.notes !== undefined) item['notes'] = opts.notes;
-  const result = await client.addItems(vaultId, [item as { title: string }]);
+  const result = await client.addItems(vaultId, [item as Parameters<RefHubClient['addItems']>[1][number]]);
   format(result, tableMode, ['id', 'title', 'doi', 'year']);
 }
 

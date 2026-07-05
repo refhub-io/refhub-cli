@@ -18,10 +18,14 @@ export async function handleItemAdd(client, vaultId, opts, tableMode) {
         item['year'] = opts.year;
     if (opts.doi)
         item['doi'] = opts.doi;
+    if (opts.url)
+        item['url'] = opts.url;
     if (opts.tags)
         item['tag_ids'] = opts.tags.split(',').map((t) => t.trim());
     if (opts.notes !== undefined)
         item['notes'] = opts.notes;
+    if (opts.pdfUrl !== undefined)
+        item['pdf_url'] = opts.pdfUrl;
     const result = await client.addItems(vaultId, [item]);
     format(result, tableMode, ['id', 'title', 'doi', 'year']);
 }
@@ -35,8 +39,12 @@ export async function handleItemUpdate(client, vaultId, itemId, opts, tableMode)
         body['year'] = opts.year;
     if (opts.doi)
         body['doi'] = opts.doi;
+    if (opts.url)
+        body['url'] = opts.url;
     if (opts.notes !== undefined)
         body['notes'] = opts.notes;
+    if (opts.pdfUrl !== undefined)
+        body['pdf_url'] = opts.pdfUrl;
     if (opts.tags) {
         process.stderr.write(JSON.stringify({ warning: 'tag_replacement', message: '--tags replaces the full tag set, not an append. Existing tags will be removed.' }) + '\n');
         body['tag_ids'] = opts.tags.split(',').map((t) => t.trim());
@@ -121,12 +129,14 @@ export function registerItems(program) {
         .option('--authors <authors>', 'comma-separated, e.g. "Smith J,Doe A"')
         .option('--year <year>', 'publication year', (v) => parseInt(v, 10))
         .option('--doi <doi>')
+        .option('--url <url>', 'publication URL')
         .option('--tags <ids>', 'comma-separated tag IDs')
         .option('--notes <text>', 'free-text notes on the item')
+        .option('--pdf-url <url>', "publisher PDF link (the frontend's publisher_pdf field)")
         .action(async (opts, cmd) => {
         const g = cmd.optsWithGlobals();
         const client = resolveClient(g.apiKey);
-        await run(() => handleItemAdd(client, opts.vault, { title: opts.title, authors: opts.authors, year: opts.year, doi: opts.doi, tags: opts.tags, notes: opts.notes }, g.table ?? false));
+        await run(() => handleItemAdd(client, opts.vault, { title: opts.title, authors: opts.authors, year: opts.year, doi: opts.doi, url: opts.url, tags: opts.tags, notes: opts.notes, pdfUrl: opts.pdfUrl }, g.table ?? false));
     });
     items
         .command('update')
@@ -137,12 +147,14 @@ export function registerItems(program) {
         .option('--authors <authors>')
         .option('--year <year>', '', (v) => parseInt(v, 10))
         .option('--doi <doi>')
+        .option('--url <url>', 'publication URL')
         .option('--tags <ids>', 'comma-separated tag IDs — REPLACES the full tag set')
         .option('--notes <text>', 'free-text notes on the item')
+        .option('--pdf-url <url>', "publisher PDF link (the frontend's publisher_pdf field)")
         .action(async (itemId, opts, cmd) => {
         const g = cmd.optsWithGlobals();
         const client = resolveClient(g.apiKey);
-        await run(() => handleItemUpdate(client, opts.vault, itemId, { title: opts.title, authors: opts.authors, year: opts.year, doi: opts.doi, tags: opts.tags, notes: opts.notes }, g.table ?? false));
+        await run(() => handleItemUpdate(client, opts.vault, itemId, { title: opts.title, authors: opts.authors, year: opts.year, doi: opts.doi, url: opts.url, tags: opts.tags, notes: opts.notes, pdfUrl: opts.pdfUrl }, g.table ?? false));
     });
     items
         .command('delete')

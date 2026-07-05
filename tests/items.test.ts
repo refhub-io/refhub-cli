@@ -67,6 +67,22 @@ describe('item commands', () => {
     expect(body.notes).toBe('revised per reviewer 2');
   });
 
+  it('handleItemAdd sends url and pdf_url when passed', async () => {
+    mockFetch({ data: [{ id: 'i1', title: 'My Paper' }] });
+    await handleItemAdd(client, 'v1', { title: 'My Paper', authors: undefined, year: undefined, doi: undefined, tags: undefined, url: 'https://doi.org/10.2307/1912791', pdfUrl: 'https://example.com/paper.pdf' }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body.items[0].url).toBe('https://doi.org/10.2307/1912791');
+    expect(body.items[0].pdf_url).toBe('https://example.com/paper.pdf');
+  });
+
+  it('handleItemUpdate sends url and pdf_url when passed', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, url: 'https://example.com/paper', pdfUrl: 'https://example.com/paper.pdf' }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body.url).toBe('https://example.com/paper');
+    expect(body.pdf_url).toBe('https://example.com/paper.pdf');
+  });
+
   it('handleItemUpdate warns about tag replacement when --tags passed', async () => {
     mockFetch({ data: { id: 'i1' } });
     const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);

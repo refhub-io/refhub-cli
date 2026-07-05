@@ -51,7 +51,7 @@ describe('handlePdfUpload', () => {
   });
 
   it('writes result to stdout', async () => {
-    const responseData = { stored: true, provider: 'google_drive', fileId: 'f1', pdfUrl: 'https://drive.google.com/...' };
+    const responseData = { stored: true, provider: 'google_drive', fileId: 'f1', driveUrl: 'https://drive.google.com/...' };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true, status: 200,
       json: () => Promise.resolve({ data: responseData }),

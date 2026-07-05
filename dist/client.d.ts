@@ -60,16 +60,20 @@ export declare class RefHubClient {
         authors?: string[];
         year?: number;
         doi?: string;
+        url?: string;
         tag_ids?: string[];
         notes?: string;
+        pdf_url?: string;
     }>): Promise<ApiResponse<Item[]>>;
     updateItem(vaultId: string, itemId: string, body: {
         title?: string;
         authors?: string[];
         year?: number;
         doi?: string;
+        url?: string;
         tag_ids?: string[];
         notes?: string;
+        pdf_url?: string;
     }): Promise<ApiResponse<Item>>;
     deleteItem(vaultId: string, itemId: string): Promise<ApiResponse<{
         id: string;
@@ -161,7 +165,8 @@ export interface PdfUploadResult {
     fileId?: string;
     folderId?: string;
     folderName?: string;
-    pdfUrl?: string;
+    /** URL of the stored copy at `provider` (e.g. Google Drive) — distinct from `pdf_url` (the publisher-hosted PDF link) on Item. */
+    driveUrl?: string;
     sourceUrl?: string | null;
 }
 export interface PdfUploadSession {

@@ -153,11 +153,11 @@ export class RefHubClient {
     return this.req<ApiResponse<Item>>('GET', `/vaults/${vaultId}/items/${itemId}`);
   }
 
-  addItems(vaultId: string, items: Array<{ title: string; authors?: string[]; year?: number; doi?: string; tag_ids?: string[]; notes?: string }>) {
+  addItems(vaultId: string, items: Array<{ title: string; authors?: string[]; year?: number; doi?: string; url?: string; tag_ids?: string[]; notes?: string; pdf_url?: string }>) {
     return this.req<ApiResponse<Item[]>>('POST', `/vaults/${vaultId}/items`, { items });
   }
 
-  updateItem(vaultId: string, itemId: string, body: { title?: string; authors?: string[]; year?: number; doi?: string; tag_ids?: string[]; notes?: string }) {
+  updateItem(vaultId: string, itemId: string, body: { title?: string; authors?: string[]; year?: number; doi?: string; url?: string; tag_ids?: string[]; notes?: string; pdf_url?: string }) {
     return this.req<ApiResponse<Item>>('PATCH', `/vaults/${vaultId}/items/${itemId}`, body);
   }
 
@@ -388,7 +388,8 @@ export interface PdfUploadResult {
   fileId?: string;
   folderId?: string;
   folderName?: string;
-  pdfUrl?: string;
+  /** URL of the stored copy at `provider` (e.g. Google Drive) — distinct from `pdf_url` (the publisher-hosted PDF link) on Item. */
+  driveUrl?: string;
   sourceUrl?: string | null;
 }
 

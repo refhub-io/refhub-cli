@@ -18,7 +18,7 @@ export async function handleItemAdd(client, vaultId, opts, tableMode) {
         item['year'] = opts.year;
     if (opts.doi)
         item['doi'] = opts.doi;
-    if (opts.url)
+    if (opts.url !== undefined)
         item['url'] = opts.url;
     if (opts.tags)
         item['tag_ids'] = opts.tags.split(',').map((t) => t.trim());
@@ -39,7 +39,7 @@ export async function handleItemUpdate(client, vaultId, itemId, opts, tableMode)
         body['year'] = opts.year;
     if (opts.doi)
         body['doi'] = opts.doi;
-    if (opts.url)
+    if (opts.url !== undefined)
         body['url'] = opts.url;
     if (opts.notes !== undefined)
         body['notes'] = opts.notes;

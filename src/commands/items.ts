@@ -34,7 +34,7 @@ export async function handleItemAdd(
   if (opts.authors) item['authors'] = opts.authors.split(',').map((a) => a.trim());
   if (opts.year !== undefined) item['year'] = opts.year;
   if (opts.doi) item['doi'] = opts.doi;
-  if (opts.url) item['url'] = opts.url;
+  if (opts.url !== undefined) item['url'] = opts.url;
   if (opts.tags) item['tag_ids'] = opts.tags.split(',').map((t) => t.trim());
   if (opts.notes !== undefined) item['notes'] = opts.notes;
   if (opts.pdfUrl !== undefined) item['pdf_url'] = opts.pdfUrl;
@@ -54,7 +54,7 @@ export async function handleItemUpdate(
   if (opts.authors) body['authors'] = opts.authors.split(',').map((a) => a.trim());
   if (opts.year !== undefined) body['year'] = opts.year;
   if (opts.doi) body['doi'] = opts.doi;
-  if (opts.url) body['url'] = opts.url;
+  if (opts.url !== undefined) body['url'] = opts.url;
   if (opts.notes !== undefined) body['notes'] = opts.notes;
   if (opts.pdfUrl !== undefined) body['pdf_url'] = opts.pdfUrl;
   if (opts.tags) {

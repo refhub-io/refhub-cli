@@ -75,6 +75,13 @@ describe('item commands', () => {
     expect(body.items[0].pdf_url).toBe('https://example.com/paper.pdf');
   });
 
+  it('handleItemUpdate sends an empty --url to clear the field, like --notes/--pdf-url do', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, url: '' }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body).toHaveProperty('url', '');
+  });
+
   it('handleItemUpdate sends url and pdf_url when passed', async () => {
     mockFetch({ data: { id: 'i1' } });
     await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, url: 'https://example.com/paper', pdfUrl: 'https://example.com/paper.pdf' }, false);

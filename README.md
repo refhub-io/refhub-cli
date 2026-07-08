@@ -103,7 +103,7 @@ refhub items changes --vault <id> --since <ISO>
 
 `--tags` on update is a **full replacement**, not an append. a warning is printed to stderr.
 
-`--pdf-url` sets the frontend's `publisher_pdf` field (a link to a publisher-hosted PDF). it is distinct from the frontend's `drive_pdf` field (the Google Drive-hosted copy created by `refhub pdf upload`, see below) — there is currently no API route to read back a stored Drive PDF URL after upload; it is only returned once, in the upload response.
+`--pdf-url` sets the frontend's `publisher_pdf` field (a link to a publisher-hosted PDF). it is distinct from the frontend's `drive_pdf` field (the Google Drive-hosted copy created by `refhub pdf upload`, see below) — the Drive copy is readable back afterward too, as `drive_pdf_url` on item reads (see the `pdf` command below).
 
 ### tags
 
@@ -185,7 +185,8 @@ refhub pdf upload --vault <vaultId> --item <itemId> --file <path/to/file.pdf>
 
 - all PDF uploads use the resumable Drive flow, regardless of file size — there is no raw-body upload route anymore: `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/session`, direct `PUT` of the PDF bytes to the returned Google Drive `upload_url`, then `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/complete`
 - max file size: 26 MB by default, matching the backend Google Drive upload limit
-- on success the response body carries the resulting Google Drive URL directly: `{ data: { stored: true, provider: "google_drive", fileId, driveUrl, folderId, folderName } }`. **`driveUrl` is only ever returned here** — capture it immediately if you need to record or display it. Deliberately named differently from `pdf_url` (the publisher-hosted link set via `--pdf-url`, see above) since they are unrelated fields. There is currently no route to read a stored Drive PDF URL back later; it is not included in `items get`/`items list`/vault reads (that's the frontend's `drive_pdf` field). This is expected to change once `.netlify` PR #22 (exposing `drive_pdf_url` on reads) merges — this doc will be updated then.
+- on success the response body carries the resulting Google Drive URL directly: `{ data: { stored: true, provider: "google_drive", fileId, driveUrl, folderId, folderName } }`. Deliberately named differently from `pdf_url` (the publisher-hosted link set via `--pdf-url`, see above) since they are unrelated fields.
+- the stored Drive link is also readable afterward as `drive_pdf_url` on `items get`/`items list`/vault reads, and in the refreshed row returned by `items update` — it's the same value the frontend calls `drive_pdf`.
 
 ---
 
@@ -263,3 +264,4 @@ not exposed by the cli:
 - api key management (jwt-only, no cli command)
 - google drive link/unlink setup (browser/JWT-only, no cli command)
 - global audit log (jwt-only, non-vault-scoped, no cli command)
+- publication-level PDF upload for library-only papers with no vault (`POST /publications/:publicationId/pdf/session` + `/complete`) — API-key accessible, but no cli command wraps it yet; `refhub pdf upload` only covers vault items

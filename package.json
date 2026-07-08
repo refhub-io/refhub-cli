@@ -12,15 +12,15 @@
     "url": "https://github.com/refhub-io/refhub-cli/issues"
   },
   "engines": { "node": ">=18" },
-  "bin": { "refhub": "dist/index.js" },
+  "bin": { "refhub": "bin/refhub.js" },
   "scripts": {
-    "build": "tsc && node -e \"import('fs').then(fs=>{ const f='dist/index.js'; fs.writeFileSync(f,'#!/usr/bin/env node\\n'+fs.readFileSync(f,'utf8')); fs.chmodSync(f,'755'); })\"",
+    "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "smoke": "tsx scripts/smoke.ts",
     "dev": "tsx src/index.ts"
   },
-  "files": ["dist"],
+  "files": ["dist", "bin"],
   "publishConfig": {
     "access": "public"
   },

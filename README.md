@@ -254,14 +254,3 @@ Releases are published from GitHub Actions via npm Trusted Publishing. See [RELE
 | output | chalk • cli-table3 |
 | tests | vitest |
 | build | tsc + tsx |
-
----
-
-## // out of scope (v1)
-
-not exposed by the cli:
-
-- api key management (jwt-only, no cli command)
-- google drive link/unlink setup (browser/JWT-only, no cli command)
-- global audit log (jwt-only, non-vault-scoped, no cli command)
-- publication-level PDF upload for library-only papers with no vault (`POST /publications/:publicationId/pdf/session` + `/complete`) — API-key accessible, but no cli command wraps it yet; `refhub pdf upload` only covers vault items

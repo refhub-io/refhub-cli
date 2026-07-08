@@ -12,8 +12,8 @@ project uses [Semantic Versioning](https://semver.org/). History prior to
 - `--url` and `--pdf-url` flags on `items add`/`items update`, matching the
   full publication field set the API already accepts.
 - `bin/refhub.js` as a dedicated CLI entry point.
-- Out-of-scope README note: publication-level PDF upload (library-only
-  papers, no vault) has no CLI command yet despite being API-key accessible.
+- `drive_pdf_url` on the exported `Item` type, matching what `items
+  get`/`items list`/`items update` now return.
 
 ### Changed
 - `refhub pdf upload` always uses the resumable Drive upload flow now,

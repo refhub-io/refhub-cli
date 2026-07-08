@@ -20,9 +20,12 @@ export interface Item {
     authors?: string[];
     year?: number;
     doi?: string;
+    url?: string;
     bibtex_key?: string;
     abstract?: string;
     notes?: string;
+    pdf_url?: string;
+    drive_pdf_url?: string | null;
     tag_ids: string[];
     version: number;
     created_at: string;

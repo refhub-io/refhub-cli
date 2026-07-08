@@ -29,8 +29,6 @@ export class RefHubError extends Error {
 }
 
 export class RefHubClient {
-  static readonly RAW_PDF_UPLOAD_LIMIT_BYTES = 6 * 1024 * 1024;
-
   private readonly baseUrl = 'https://refhub-api.netlify.app/api/v1';
   private readonly headers: Record<string, string>;
 
@@ -58,25 +56,6 @@ export class RefHubClient {
         typeof (err['details'] as Record<string, unknown> | undefined)?.['retry_after_seconds'] === 'number'
           ? Number((err['details'] as Record<string, unknown>)['retry_after_seconds'])
           : typeof payload['retry_after_seconds'] === 'number' ? payload['retry_after_seconds'] : undefined,
-      );
-    }
-    return res.json() as Promise<T>;
-  }
-
-  private async reqBinary<T>(method: string, path: string, body: Buffer, contentType = 'application/octet-stream'): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      method,
-      headers: { ...this.headers, 'Content-Type': contentType },
-      body: body as unknown as BodyInit,
-    });
-    if (!res.ok) {
-      const payload = await res.json().catch(() => ({})) as Record<string, unknown>;
-      const err = (payload['error'] ?? {}) as Record<string, unknown>;
-      throw new RefHubError(
-        res.status,
-        String(err['code'] ?? 'unknown_error'),
-        String(err['message'] ?? `HTTP ${res.status}`),
-        String((payload['meta'] as Record<string, unknown>)?.['request_id'] ?? err['request_id'] ?? ''),
       );
     }
     return res.json() as Promise<T>;
@@ -153,11 +132,11 @@ export class RefHubClient {
     return this.req<ApiResponse<Item>>('GET', `/vaults/${vaultId}/items/${itemId}`);
   }
 
-  addItems(vaultId: string, items: Array<{ title: string; authors?: string[]; year?: number; doi?: string; tag_ids?: string[]; notes?: string }>) {
+  addItems(vaultId: string, items: Array<{ title: string; authors?: string[]; year?: number; doi?: string; url?: string; tag_ids?: string[]; notes?: string; pdf_url?: string }>) {
     return this.req<ApiResponse<Item[]>>('POST', `/vaults/${vaultId}/items`, { items });
   }
 
-  updateItem(vaultId: string, itemId: string, body: { title?: string; authors?: string[]; year?: number; doi?: string; tag_ids?: string[]; notes?: string }) {
+  updateItem(vaultId: string, itemId: string, body: { title?: string; authors?: string[]; year?: number; doi?: string; url?: string; tag_ids?: string[]; notes?: string; pdf_url?: string }) {
     return this.req<ApiResponse<Item>>('PATCH', `/vaults/${vaultId}/items/${itemId}`, body);
   }
 
@@ -308,15 +287,6 @@ export class RefHubClient {
     );
   }
 
-  uploadItemPdfRaw(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
-    return this.reqBinary<ApiResponse<PdfUploadResult>>(
-      'POST',
-      `/vaults/${encodeURIComponent(vaultId)}/items/${encodeURIComponent(itemId)}/pdf`,
-      pdfBuffer,
-      'application/pdf',
-    );
-  }
-
   createItemPdfUploadSession(vaultId: string, itemId: string): Promise<ApiResponse<PdfUploadSession>> {
     return this.req<ApiResponse<PdfUploadSession>>(
       'POST',
@@ -337,7 +307,12 @@ export class RefHubClient {
     );
   }
 
-  async uploadItemPdfResumable(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
+  /**
+   * The only PDF upload mechanism: create a resumable session, PUT the bytes
+   * directly to Google Drive, then record completion. Works at any file
+   * size — there is no raw-bytes upload path.
+   */
+  async uploadItemPdf(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
     const session = await this.createItemPdfUploadSession(vaultId, itemId);
     const driveResponse = await fetch(session.data.upload_url, {
       method: 'PUT',
@@ -364,21 +339,6 @@ export class RefHubClient {
     });
   }
 
-  async uploadItemPdf(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>> {
-    if (pdfBuffer.length > RefHubClient.RAW_PDF_UPLOAD_LIMIT_BYTES) {
-      return this.uploadItemPdfResumable(vaultId, itemId, pdfBuffer);
-    }
-
-    try {
-      return await this.uploadItemPdfRaw(vaultId, itemId, pdfBuffer);
-    } catch (err) {
-      if (err instanceof RefHubError && err.status === 413 && err.code === 'pdf_upload_too_large_for_api') {
-        return this.uploadItemPdfResumable(vaultId, itemId, pdfBuffer);
-      }
-      throw err;
-    }
-  }
-
 }
 
 export interface PdfUploadResult {
@@ -388,7 +348,8 @@ export interface PdfUploadResult {
   fileId?: string;
   folderId?: string;
   folderName?: string;
-  pdfUrl?: string;
+  /** URL of the stored copy at `provider` (e.g. Google Drive) — distinct from `pdf_url` (the publisher-hosted PDF link) on Item. */
+  driveUrl?: string;
   sourceUrl?: string | null;
 }
 

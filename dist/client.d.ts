@@ -7,12 +7,10 @@ export declare class RefHubError extends Error {
     constructor(status: number, code: string, message: string, request_id: string, retry_after_seconds?: number);
 }
 export declare class RefHubClient {
-    static readonly RAW_PDF_UPLOAD_LIMIT_BYTES: number;
     private readonly baseUrl;
     private readonly headers;
     constructor(apiKey: string);
     private req;
-    private reqBinary;
     private reqText;
     listVaults(): Promise<ApiResponse<Vault[]>>;
     getVault(vaultId: string): Promise<ApiResponse<VaultDetail>>;
@@ -60,16 +58,20 @@ export declare class RefHubClient {
         authors?: string[];
         year?: number;
         doi?: string;
+        url?: string;
         tag_ids?: string[];
         notes?: string;
+        pdf_url?: string;
     }>): Promise<ApiResponse<Item[]>>;
     updateItem(vaultId: string, itemId: string, body: {
         title?: string;
         authors?: string[];
         year?: number;
         doi?: string;
+        url?: string;
         tag_ids?: string[];
         notes?: string;
+        pdf_url?: string;
     }): Promise<ApiResponse<Item>>;
     deleteItem(vaultId: string, itemId: string): Promise<ApiResponse<{
         id: string;
@@ -144,14 +146,17 @@ export declare class RefHubClient {
     }>>;
     semanticScholarSearch(query: string, limit?: number): Promise<ApiResponse<SemanticScholarPaper[]>>;
     semanticScholarPaperList(kind: 'recommendations' | 'related' | 'references' | 'citations' | 'cited-by', paperId: string, limit?: number): Promise<ApiResponse<SemanticScholarPaper[]>>;
-    uploadItemPdfRaw(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>>;
     createItemPdfUploadSession(vaultId: string, itemId: string): Promise<ApiResponse<PdfUploadSession>>;
     completeItemPdfUpload(vaultId: string, itemId: string, body: {
         file_id: string;
         web_view_link?: string | null;
         source_url?: string | null;
     }): Promise<ApiResponse<PdfUploadResult>>;
-    uploadItemPdfResumable(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>>;
+    /**
+     * The only PDF upload mechanism: create a resumable session, PUT the bytes
+     * directly to Google Drive, then record completion. Works at any file
+     * size — there is no raw-bytes upload path.
+     */
     uploadItemPdf(vaultId: string, itemId: string, pdfBuffer: Buffer): Promise<ApiResponse<PdfUploadResult>>;
 }
 export interface PdfUploadResult {
@@ -161,7 +166,8 @@ export interface PdfUploadResult {
     fileId?: string;
     folderId?: string;
     folderName?: string;
-    pdfUrl?: string;
+    /** URL of the stored copy at `provider` (e.g. Google Drive) — distinct from `pdf_url` (the publisher-hosted PDF link) on Item. */
+    driveUrl?: string;
     sourceUrl?: string | null;
 }
 export interface PdfUploadSession {

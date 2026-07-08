@@ -91,8 +91,8 @@ refhub vaults shares remove <vaultId> <shareId>
 ```bash
 refhub items list --vault <id> [--page] [--limit]
 refhub items get --vault <id> <itemId>
-refhub items add --vault <id> --title <t> [--authors "Smith J,Doe A"] [--year] [--doi] [--tags <id,id>]
-refhub items update --vault <id> <itemId> [--title] [--authors] [--year] [--doi] [--tags <id,id>]
+refhub items add --vault <id> --title <t> [--authors "Smith J,Doe A"] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes]
+refhub items update --vault <id> <itemId> [--title] [--authors] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes]
 refhub items delete --vault <id> <itemId> --confirm
 refhub items upsert --vault <id> --file <items.json> [--idempotency-key]
 refhub items preview --vault <id> --file <items.json>
@@ -102,6 +102,8 @@ refhub items changes --vault <id> --since <ISO>
 ```
 
 `--tags` on update is a **full replacement**, not an append. a warning is printed to stderr.
+
+`--pdf-url` sets the frontend's `publisher_pdf` field (a link to a publisher-hosted PDF). it is distinct from the frontend's `drive_pdf` field (the Google Drive-hosted copy created by `refhub pdf upload`, see below) — the Drive copy is readable back afterward too, as `drive_pdf_url` on item reads (see the `pdf` command below).
 
 ### tags
 
@@ -181,10 +183,10 @@ Uploads a PDF file to the user's linked Google Drive and links it to a vault ite
 refhub pdf upload --vault <vaultId> --item <itemId> --file <path/to/file.pdf>
 ```
 
-- small PDFs use the raw API-key upload route: `POST /api/v1/vaults/:vaultId/items/:itemId/pdf`
-- raw API uploads are capped by the backend at the smallest of `REFHUB_API_MAX_BODY_BYTES`, `GOOGLE_DRIVE_MAX_UPLOAD_BYTES`, and the Netlify synchronous Function ceiling (6 MiB); oversized raw requests return structured `413 pdf_upload_too_large_for_api`
-- larger PDFs use the API-key resumable Drive flow: `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/session`, direct `PUT` of the PDF bytes to the returned Google Drive `upload_url`, then `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/complete`
+- all PDF uploads use the resumable Drive flow, regardless of file size — there is no raw-body upload route anymore: `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/session`, direct `PUT` of the PDF bytes to the returned Google Drive `upload_url`, then `POST /api/v1/vaults/:vaultId/items/:itemId/pdf/complete`
 - max file size: 26 MB by default, matching the backend Google Drive upload limit
+- on success the response body carries the resulting Google Drive URL directly: `{ data: { stored: true, provider: "google_drive", fileId, driveUrl, folderId, folderName } }`. Deliberately named differently from `pdf_url` (the publisher-hosted link set via `--pdf-url`, see above) since they are unrelated fields.
+- the stored Drive link is also readable afterward as `drive_pdf_url` on `items get`/`items list`/vault reads, and in the refreshed row returned by `items update` — it's the same value the frontend calls `drive_pdf`.
 
 ---
 
@@ -252,13 +254,3 @@ Releases are published from GitHub Actions via npm Trusted Publishing. See [RELE
 | output | chalk • cli-table3 |
 | tests | vitest |
 | build | tsc + tsx |
-
----
-
-## // out of scope (v1)
-
-not exposed by the cli:
-
-- api key management (jwt-only, no cli command)
-- google drive link/unlink setup (browser/JWT-only, no cli command)
-- global audit log (jwt-only, non-vault-scoped, no cli command)

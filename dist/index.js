@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // src/index.ts
 import { Command } from 'commander';
 import { createRequire } from 'module';

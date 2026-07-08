@@ -111,25 +111,12 @@ describe('RefHubClient API-key agent routes', () => {
     expect(parsed.searchParams.get('doi')).toBe('10.1/x');
   });
 
-  it('keeps small item PDF uploads on the raw API-key route', async () => {
-    mockFetch({ data: { stored: true, provider: 'google_drive', fileId: 'f1' } });
-    const client = new RefHubClient('rhk_test_key');
-
-    await client.uploadItemPdf('vault-1', 'item-1', Buffer.from('%PDF-small'));
-
-    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/vaults/vault-1/items/item-1/pdf');
-    expect(url).not.toContain('/pdf/session');
-    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer rhk_test_key');
-    expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/pdf');
-  });
-
-  it('uses API-key resumable Drive flow for item PDFs above the raw API limit', async () => {
+  it('always uses the resumable Drive upload flow for item PDFs, regardless of size', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ data: { upload_url: 'https://drive.example/upload-session', file_name: 'Large.pdf' } }),
+        json: () => Promise.resolve({ data: { upload_url: 'https://drive.example/upload-session', file_name: 'Small.pdf' } }),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -144,10 +131,7 @@ describe('RefHubClient API-key agent routes', () => {
       });
     vi.stubGlobal('fetch', fetchMock);
     const client = new RefHubClient('rhk_test_key');
-    const pdf = Buffer.concat([
-      Buffer.from('%PDF-1.4\n'),
-      Buffer.alloc(RefHubClient.RAW_PDF_UPLOAD_LIMIT_BYTES + 1),
-    ]);
+    const pdf = Buffer.from('%PDF-small');
 
     await client.uploadItemPdf('vault-1', 'item-1', pdf);
 
@@ -169,42 +153,5 @@ describe('RefHubClient API-key agent routes', () => {
       file_id: 'drive-file-1',
       web_view_link: 'https://drive.example/view',
     });
-  });
-
-  it('falls back to resumable upload when the raw API route reports the body is too large', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 413,
-        json: () => Promise.resolve({
-          error: { code: 'pdf_upload_too_large_for_api', message: 'too large' },
-          meta: { request_id: 'req-too-large' },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ data: { upload_url: 'https://drive.example/upload-session' } }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ id: 'drive-file-2', webViewLink: 'https://drive.example/view-2' }),
-        text: () => Promise.resolve(''),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ data: { stored: true, provider: 'google_drive', fileId: 'drive-file-2' } }),
-      });
-    vi.stubGlobal('fetch', fetchMock);
-    const client = new RefHubClient('rhk_test_key');
-
-    await client.uploadItemPdf('vault-1', 'item-1', Buffer.from('%PDF-small'));
-
-    expect(fetchMock).toHaveBeenCalledTimes(4);
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/vaults/vault-1/items/item-1/pdf');
-    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/vaults/vault-1/items/item-1/pdf/session');
-    expect(String(fetchMock.mock.calls[3]?.[0])).toContain('/vaults/vault-1/items/item-1/pdf/complete');
   });
 });

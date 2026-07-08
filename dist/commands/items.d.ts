@@ -10,16 +10,20 @@ export declare function handleItemAdd(client: RefHubClient, vaultId: string, opt
     authors?: string;
     year?: number;
     doi?: string;
+    url?: string;
     tags?: string;
     notes?: string;
+    pdfUrl?: string;
 }, tableMode: boolean): Promise<void>;
 export declare function handleItemUpdate(client: RefHubClient, vaultId: string, itemId: string, opts: {
     title?: string;
     authors?: string;
     year?: number;
     doi?: string;
+    url?: string;
     tags?: string;
     notes?: string;
+    pdfUrl?: string;
 }, tableMode: boolean): Promise<void>;
 export declare function handleItemDelete(client: RefHubClient, vaultId: string, itemId: string, confirmed: boolean): Promise<void>;
 export declare function handleItemUpsert(client: RefHubClient, vaultId: string, filePath: string, idempotencyKey: string | undefined, tableMode: boolean): Promise<void>;

@@ -1,43 +1,63 @@
-# AGENTS.md
+# RefHub CLI Agent Guide
 
-Process guide for any coding agent (or human) working in this repo — Claude Code, Codex, Cursor, or otherwise. The point is that behavior stays consistent no matter which tool or session is doing the work. This mirrors the same process used in `refhub.io` and `.netlify`, adapted for a published npm CLI.
+Agent-facing guide for operating RefHub through the published `refhub` command-line interface. This file is about using the repo/tool as an agent runtime surface. Contribution process lives in `CONTRIBUTING.md`.
 
-## 1. Check existing conventions first
+## When to use this guide
 
-Before adding or changing a command, read `README.md` for the existing flag naming, output format (`chalk` colors, `cli-table3` tables, JSON-by-default output), and auth conventions (`REFHUB_API_KEY` env var / `--api-key` flag). Look at an existing command in `src/` that's similar to what you're adding and match its structure rather than inventing a new pattern.
+Use this when a user asks an agent to:
 
-## 2. Do the work that's actually asked for
+- list, read, search, or export RefHub vault content;
+- add, update, import, or delete vault items;
+- manage tags, relations, vault metadata, and shares through the CLI;
+- enrich publication metadata or upload PDFs through supported CLI commands;
+- verify CLI behavior from source before changing code.
 
-No unrequested refactors, no speculative abstractions, no drive-by cleanups bundled into an unrelated change. If you notice something else worth fixing while you're in there, say so — don't silently expand the scope of the current task.
+Do not treat frontend-only or Supabase-only capabilities as CLI support. Check `README.md` and `refhub --help` before claiming a command exists.
 
-## 3. Commit as soon as a fix or feature works
+## Execution layer
 
-Don't let one commit accumulate multiple unrelated changes, and don't sit on working code uncommitted. As soon as a change does what it was supposed to do, verify it and commit it:
+Prefer the installed CLI when available:
 
-- `npm test` — all tests passing
-- `npm run build` — `tsc` compiles cleanly
-- For anything touching the published entry point: verify with a real `npm uninstall -g @refhub/cli` / `npm install -g .` cycle, not just the build step, per the precedent in this repo's history
+```sh
+refhub --help
+refhub vaults list
+refhub items search --vault <vaultId> --query <text>
+refhub export --vault <vaultId> --format json
+```
 
-Small, working commits are easier to review, bisect, and revert than one large commit at the end.
+If working from this repo, build or run the source according to `README.md` before testing behavior. Do not infer behavior from stale `dist/` output when source has changed.
 
-## 4. Ship as a branch + PR
+## Authentication
 
-Never commit directly to `main`. Do the work on a feature/fix branch, then push and open a PR. **Merging a version bump to `main` triggers an automatic npm publish** once CI passes (see `RELEASE.md`) — there is no separate manual publish step, so nothing lands on `main` without review.
+Data routes use a RefHub API key:
 
-## 5. Keep `CHANGELOG.md` current
+```sh
+export REFHUB_API_KEY=rhk_<publicId>_<secret>
+```
 
-Update `CHANGELOG.md` (Keep a Changelog format, already in use) in the same PR as the change it documents. A shipped change without a changelog entry isn't done — don't let it drift and get backfilled later.
+Scopes are enforced by the backend. If the key is missing, invalid, expired, revoked, or lacks a needed scope, stop and ask for a suitable key. Do not retry writes with the same failing credential.
 
-## 6. Versioning policy
+## Guardrails
 
-Bump `package.json` **and** `package-lock.json` to the new semver version — `RELEASE.md` is the authoritative process for how that bump becomes an npm publish; read it before your first release here.
+- Never infer a `vault_id` from a vault name. Resolve it with `refhub vaults list`.
+- Never assume a tag exists. List tags before writes that reference tag IDs.
+- Never create tags implicitly during item writes. Tag creation is a separate operation.
+- Never retry a bulk write after ambiguous failure unless the command supports and used an idempotency key.
+- Never proceed with vault or item deletion without explicit user confirmation.
+- Treat `tag_ids` replacement semantics as destructive enough to call out before updating.
+- Keep output machine-readable when the user or workflow asks for JSON.
 
-- **Patch** (`1.5.X`): version bump + `CHANGELOG.md` entry. Bug fixes, internal tweaks, no CLI-surface change.
-- **Minor** (`1.X.0`): version bump + `CHANGELOG.md` entry with a clear "Added" section. Use this tier for new commands or flags that don't break existing usage.
-- **Major** (`X.0.0`): version bump + `CHANGELOG.md` entry, and manually create the git tag + a GitHub Release with notes — the automated workflow intentionally does *not* create tags/releases (see `RELEASE.md`'s note on `GITHUB_TOKEN` write access), so this step doesn't happen unless you do it. Reserve this tier for breaking changes to commands, flags, or output shape that scripts/agents depend on.
+## Error handling
 
-## Anything else worth doing before you start
+Use CLI exit codes and stderr as the source of truth:
 
-- Check `git status`, current branch, and recent `git log` before touching anything — this repo often has multiple feature branches in flight; make sure you're building on the right base (usually `main`, not whatever branch happened to be checked out).
-- Run the full test suite once at the start so you know the baseline is green, and any later failure is yours to fix, not inherited.
-- If the task is large or the requirements are ambiguous, write a short plan and get it confirmed before touching code — don't guess at scope.
+- `0`: success.
+- `1`: API or runtime error.
+- `2`: invalid arguments.
+- `3`: auth error.
+
+Report the failing command, exit code, and actionable cause. Avoid leaking API keys or bearer tokens in logs, screenshots, summaries, or issues.
+
+## If code changes are requested
+
+Switch to `CONTRIBUTING.md` before editing. That file covers branches, commits, verification, changelog entries, version bumps, and release behavior.

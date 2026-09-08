@@ -9,6 +9,8 @@ Use this when a user asks an agent to:
 - list, read, search, or export RefHub vault content;
 - add, update, import, or delete vault items;
 - manage tags, relations, vault metadata, and shares through the CLI;
+- curate a vault's sections or an item's featured/section state for its public Codex page (owner-only);
+- scan a vault for citation-based relationship suggestions and create `cites` relations from the matches;
 - enrich publication metadata or upload PDFs through supported CLI commands;
 - verify CLI behavior from source before changing code.
 

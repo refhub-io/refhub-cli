@@ -46,7 +46,10 @@ export async function handleItemUpdate(
   client: RefHubClient,
   vaultId: string,
   itemId: string,
-  opts: { title?: string; authors?: string; year?: number; doi?: string; url?: string; tags?: string; notes?: string; pdfUrl?: string },
+  opts: {
+    title?: string; authors?: string; year?: number; doi?: string; url?: string; tags?: string; notes?: string; pdfUrl?: string;
+    section?: string; unsetSection?: boolean; featured?: boolean; unfeature?: boolean; featuredNote?: string;
+  },
   tableMode: boolean,
 ): Promise<void> {
   const body: Record<string, unknown> = {};
@@ -63,6 +66,11 @@ export async function handleItemUpdate(
     );
     body['tag_ids'] = opts.tags.split(',').map((t) => t.trim());
   }
+  if (opts.section !== undefined) body['section_id'] = opts.section;
+  if (opts.unsetSection) body['section_id'] = null;
+  if (opts.featured) body['featured'] = true;
+  if (opts.unfeature) body['featured'] = false;
+  if (opts.featuredNote !== undefined) body['featured_note'] = opts.featuredNote;
   const result = await client.updateItem(vaultId, itemId, body as Parameters<RefHubClient['updateItem']>[2]);
   format(result, tableMode);
 }
@@ -206,10 +214,26 @@ export function registerItems(program: Command): void {
     .option('--tags <ids>', 'comma-separated tag IDs — REPLACES the full tag set')
     .option('--notes <text>', 'free-text notes on the item')
     .option('--pdf-url <url>', "publisher PDF link (the frontend's publisher_pdf field)")
+    .option('--section <sectionId>', 'file this item under a curated section — requires vault owner access')
+    .option('--unset-section', 'remove this item from its current section — requires vault owner access')
+    .option('--featured', 'mark this item as featured — requires vault owner access')
+    .option('--unfeature', 'remove this item from featured — requires vault owner access')
+    .option('--featured-note <text>', 'curator note shown alongside the featured item — requires vault owner access')
     .action(async (itemId, opts, cmd) => {
+      if (opts.section && opts.unsetSection) {
+        process.stderr.write(JSON.stringify({ error: { code: 'invalid_options', message: 'Pass at most one of --section or --unset-section.' } }) + '\n');
+        process.exit(2);
+      }
+      if (opts.featured && opts.unfeature) {
+        process.stderr.write(JSON.stringify({ error: { code: 'invalid_options', message: 'Pass at most one of --featured or --unfeature.' } }) + '\n');
+        process.exit(2);
+      }
       const g = cmd.optsWithGlobals();
       const client = resolveClient(g.apiKey);
-      await run(() => handleItemUpdate(client, opts.vault, itemId, { title: opts.title, authors: opts.authors, year: opts.year, doi: opts.doi, url: opts.url, tags: opts.tags, notes: opts.notes, pdfUrl: opts.pdfUrl }, g.table ?? false));
+      await run(() => handleItemUpdate(client, opts.vault, itemId, {
+        title: opts.title, authors: opts.authors, year: opts.year, doi: opts.doi, url: opts.url, tags: opts.tags, notes: opts.notes, pdfUrl: opts.pdfUrl,
+        section: opts.section, unsetSection: opts.unsetSection, featured: opts.featured, unfeature: opts.unfeature, featuredNote: opts.featuredNote,
+      }, g.table ?? false));
     });
 
   items

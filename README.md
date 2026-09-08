@@ -92,7 +92,7 @@ refhub vaults shares remove <vaultId> <shareId>
 refhub items list --vault <id> [--page] [--limit]
 refhub items get --vault <id> <itemId>
 refhub items add --vault <id> --title <t> [--authors "Smith J,Doe A"] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes]
-refhub items update --vault <id> <itemId> [--title] [--authors] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes]
+refhub items update --vault <id> <itemId> [--title] [--authors] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes] [--section <sectionId> | --unset-section] [--featured | --unfeature] [--featured-note <text>]
 refhub items delete --vault <id> <itemId> --confirm
 refhub items upsert --vault <id> --file <items.json> [--idempotency-key]
 refhub items preview --vault <id> --file <items.json>
@@ -104,6 +104,21 @@ refhub items changes --vault <id> --since <ISO>
 `--tags` on update is a **full replacement**, not an append. a warning is printed to stderr.
 
 `--pdf-url` sets the frontend's `publisher_pdf` field (a link to a publisher-hosted PDF). it is distinct from the frontend's `drive_pdf` field (the Google Drive-hosted copy created by `refhub pdf upload`, see below) — the Drive copy is readable back afterward too, as `drive_pdf_url` on item reads (see the `pdf` command below).
+
+`--section`/`--unset-section`/`--featured`/`--unfeature`/`--featured-note` are vault-local curation fields — grouping and highlighting items for display on public vault pages. **Setting any of them requires vault owner access**, even for an api key with `vaults:write` scope held by a non-owner editor share — the backend runs a second, owner-level access check for these specific fields, separate from the editor-level check for everything else `items update` can change.
+
+### sections
+
+Curated sections group a vault's items for display on public vault pages. Listing needs only viewer access; create/update/delete require **owner** access (`vaults:admin` scope, and the caller must own the vault — an editor share cannot manage sections even with `vaults:admin`).
+
+```bash
+refhub sections list --vault <id>
+refhub sections create --vault <id> --name <n> [--description] [--position]
+refhub sections update --vault <id> <sectionId> [--name] [--description] [--position]
+refhub sections delete --vault <id> <sectionId>
+```
+
+deleting a section unfiles its items (`section_id` is cleared) rather than deleting them.
 
 ### tags
 
@@ -124,6 +139,18 @@ refhub relations create --vault <id> --pub <pubId> --related <pubId> [--type <ci
 refhub relations update --vault <id> <relationId> --type <...>
 refhub relations delete --vault <id> <relationId>
 ```
+
+`refhub relations scan` is client-side orchestration on top of the existing `discover`/manual-relation building blocks — there is no dedicated backend route for it, same as `enrich`. For each vault item with a DOI, it looks up the item's Semantic Scholar paper id, fetches its references and citations, and matches each returned paper against sibling items already in the same vault (DOI match first, falling back to an exact, case-insensitive title match), mirroring the RefHub frontend's own relationship-suggestion matching. Every match becomes a `cites` relation — item → reference for references, matched-paper → item for citations — skipping any pair that already has a relation between them.
+
+```bash
+refhub relations scan --vault <id> [--item <itemId>] [--dry-run] [--limit <n>]
+```
+
+- omit `--item` to scan every item in the vault that has a DOI
+- `--dry-run` reports what would be created without writing anything
+- `--limit` caps references/citations fetched per item from Semantic Scholar (1–25, same as `discover references`/`discover citations`)
+- rate-limited client-side to roughly 1 item/s (each item makes 3 Semantic Scholar requests); backend cache/rate-limit/stale fallback also applies
+- only ever proposes `relation_type: "cites"` — there's no basis in citation-graph data alone for `extends`/`contradicts`/etc., those remain manual via `relations create`/`update`
 
 ### import
 

@@ -1,4 +1,4 @@
-import type { ApiResponse, Vault, VaultDetail, Share, Item, UpsertResult, PreviewResult, Tag, Relation, BibTeXImportResult, AuditEntry, VaultStats, RelationType, SemanticScholarPaper, SemanticScholarDoiMetadata } from './types.js';
+import type { ApiResponse, Vault, VaultDetail, Share, Item, UpsertResult, PreviewResult, Tag, Relation, BibTeXImportResult, AuditEntry, VaultStats, RelationType, SemanticScholarPaper, SemanticScholarDoiMetadata, Section } from './types.js';
 export declare class RefHubError extends Error {
     readonly code: string;
     readonly request_id: string;
@@ -72,6 +72,10 @@ export declare class RefHubClient {
         tag_ids?: string[];
         notes?: string;
         pdf_url?: string;
+        section_id?: string | null;
+        section_position?: number;
+        featured?: boolean;
+        featured_note?: string | null;
     }): Promise<ApiResponse<Item>>;
     deleteItem(vaultId: string, itemId: string): Promise<ApiResponse<{
         id: string;
@@ -110,6 +114,20 @@ export declare class RefHubClient {
     detachTags(vaultId: string, itemId: string, tagIds: string[]): Promise<ApiResponse<{
         item_id: string;
         tag_ids: string[];
+    }>>;
+    listSections(vaultId: string): Promise<ApiResponse<Section[]>>;
+    createSection(vaultId: string, body: {
+        name: string;
+        description?: string;
+        position?: number;
+    }): Promise<ApiResponse<Section>>;
+    updateSection(vaultId: string, sectionId: string, body: {
+        name?: string;
+        description?: string;
+        position?: number;
+    }): Promise<ApiResponse<Section>>;
+    deleteSection(vaultId: string, sectionId: string): Promise<ApiResponse<{
+        id: string;
     }>>;
     listRelations(vaultId: string, type?: string): Promise<ApiResponse<Relation[]>>;
     createRelation(vaultId: string, body: {

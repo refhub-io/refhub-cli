@@ -1,6 +1,6 @@
 {
   "name": "@refhub/cli",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "refhub CLI execution layer for agent skills",
   "type": "module",
   "repository": {
@@ -11,8 +11,12 @@
   "bugs": {
     "url": "https://github.com/refhub-io/refhub-cli/issues"
   },
-  "engines": { "node": ">=18" },
-  "bin": { "refhub": "bin/refhub.js" },
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "refhub": "bin/refhub.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -20,7 +24,10 @@
     "smoke": "tsx scripts/smoke.ts",
     "dev": "tsx src/index.ts"
   },
-  "files": ["dist", "bin"],
+  "files": [
+    "dist",
+    "bin"
+  ],
   "publishConfig": {
     "access": "public"
   },

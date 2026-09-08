@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this
 project uses [Semantic Versioning](https://semver.org/). History prior to
 1.5.0 was not tracked in this file.
 
+## [1.6.0] - 2026-09-08
+
+### Added
+- `refhub sections list/create/update/delete` — manage curated vault sections. List needs viewer access; create/update/delete require vault owner access.
+- `--section <sectionId>`/`--unset-section`/`--featured`/`--unfeature`/`--featured-note <text>` on `items update`. These are vault-local curation fields; the backend requires vault owner access to set any of them, distinct from the editor-level access needed for the rest of `items update`.
+- `refhub relations scan --vault <id> [--item <itemId>] [--dry-run] [--limit <n>]` — scans each item's Semantic Scholar references/citations, matches them against sibling vault items by DOI or exact title, and creates `cites` relations for new matches. Pure client-side orchestration on the existing `discover`/relations building blocks, mirroring `enrich`'s pattern — no new backend route.
+- `Section` type, and `section_id`/`section_position`/`featured`/`featured_note` fields on `Item`.
+
 ## [1.5.0] - 2026-07-08
 
 ### Added

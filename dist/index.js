@@ -4,6 +4,7 @@ import { createRequire } from 'module';
 import { registerVaults } from './commands/vaults.js';
 import { registerItems } from './commands/items.js';
 import { registerTags } from './commands/tags.js';
+import { registerSections } from './commands/sections.js';
 import { registerRelations } from './commands/relations.js';
 import { registerImport } from './commands/import.js';
 import { registerExport } from './commands/export.js';
@@ -23,6 +24,7 @@ program
 registerVaults(program);
 registerItems(program);
 registerTags(program);
+registerSections(program);
 registerRelations(program);
 registerImport(program);
 registerExport(program);

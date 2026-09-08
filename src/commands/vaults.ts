@@ -64,7 +64,7 @@ export async function handleVaultArchive(
   tableMode: boolean,
 ): Promise<void> {
   if (!confirmed) {
-    process.stderr.write(JSON.stringify({ error: { code: 'confirm_required', message: 'Pass --confirm to acknowledge this is permanent: an archived vault can never be unarchived.' } }) + '\n');
+    process.stderr.write(JSON.stringify({ error: { code: 'confirm_required', message: 'Pass --confirm to acknowledge this is permanent: archiving makes the vault read-only forever (items/tags/relations/shares) and cannot be undone (no unarchive).' } }) + '\n');
     process.exit(2);
   }
   const result = await client.archiveVault(vaultId);

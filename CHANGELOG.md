@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this
 project uses [Semantic Versioning](https://semver.org/). History prior to
 1.5.0 was not tracked in this file.
 
+## [1.6.0] - 2026-09-08
+
+### Added
+- `refhub vaults archive <vaultId> --confirm` — permanently archives a vault via the new `POST /vaults/:vaultId/archive` backend route. There is no unarchive command; this cannot be undone.
+- `archived_at` on the `Vault` type, and surfaced in `vaults list`/`vaults get` output.
+
 ## [1.5.0] - 2026-07-08
 
 ### Added

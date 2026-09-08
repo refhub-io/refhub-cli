@@ -5,7 +5,7 @@ import { format } from '../format.js';
 
 export async function handleVaultsList(client: RefHubClient, tableMode: boolean): Promise<void> {
   const result = await client.listVaults();
-  format(result, tableMode, ['id', 'name', 'visibility', 'item_count', 'updated_at']);
+  format(result, tableMode, ['id', 'name', 'visibility', 'archived_at', 'item_count', 'updated_at']);
 }
 
 export async function handleVaultGet(client: RefHubClient, vaultId: string, tableMode: boolean): Promise<void> {
@@ -55,6 +55,20 @@ export async function handleVaultDelete(
   }
   const result = await client.deleteVault(vaultId);
   format(result, false);
+}
+
+export async function handleVaultArchive(
+  client: RefHubClient,
+  vaultId: string,
+  confirmed: boolean,
+  tableMode: boolean,
+): Promise<void> {
+  if (!confirmed) {
+    process.stderr.write(JSON.stringify({ error: { code: 'confirm_required', message: 'Pass --confirm to acknowledge this is permanent: an archived vault can never be unarchived.' } }) + '\n');
+    process.exit(2);
+  }
+  const result = await client.archiveVault(vaultId);
+  format(result, tableMode);
 }
 
 export async function handleVaultVisibility(
@@ -165,6 +179,17 @@ export function registerVaults(program: Command): void {
       const g = cmd.optsWithGlobals();
       const client = resolveClient(g.apiKey);
       await run(() => handleVaultDelete(client, vaultId, opts.confirm ?? false));
+    });
+
+  vaults
+    .command('archive')
+    .argument('<vaultId>')
+    .description('Permanently archive a vault (read-only forever, no unarchive)')
+    .option('--confirm', 'required: acknowledge this cannot be undone')
+    .action(async (vaultId, opts, cmd) => {
+      const g = cmd.optsWithGlobals();
+      const client = resolveClient(g.apiKey);
+      await run(() => handleVaultArchive(client, vaultId, opts.confirm ?? false, g.table ?? false));
     });
 
   vaults

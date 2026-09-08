@@ -32,6 +32,8 @@ export declare class RefHubClient {
     deleteVault(vaultId: string): Promise<ApiResponse<{
         id: string;
     }>>;
+    /** Permanently archives the vault. There is no unarchive — this cannot be undone. */
+    archiveVault(vaultId: string): Promise<ApiResponse<Vault>>;
     setVaultVisibility(vaultId: string, body: {
         visibility: string;
         public_slug?: string;

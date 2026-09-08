@@ -98,6 +98,11 @@ export class RefHubClient {
     return this.req<ApiResponse<{ id: string }>>('DELETE', `/vaults/${vaultId}`);
   }
 
+  /** Permanently archives the vault. There is no unarchive — this cannot be undone. */
+  archiveVault(vaultId: string) {
+    return this.req<ApiResponse<Vault>>('POST', `/vaults/${vaultId}/archive`);
+  }
+
   setVaultVisibility(vaultId: string, body: { visibility: string; public_slug?: string }) {
     return this.req<ApiResponse<Vault>>('PATCH', `/vaults/${vaultId}/visibility`, body);
   }

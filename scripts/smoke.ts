@@ -3,7 +3,7 @@
 // Run with: npm run smoke
 // Cleans up after itself (deletes the test vault at the end).
 
-import { RefHubClient } from '../src/client.js';
+import { RefHubClient, RefHubError } from '../src/client.js';
 
 const key = process.env['REFHUB_API_KEY'];
 if (!key) {
@@ -22,6 +22,24 @@ async function step(name: string, fn: () => Promise<unknown>) {
     return result;
   } catch (err) {
     process.stdout.write('FAILED\n');
+    console.error(err);
+    process.exit(1);
+  }
+}
+
+/** For operations that should be rejected -- fails the smoke test if the call succeeds, or rejects with the wrong code. */
+async function expectRejection(name: string, fn: () => Promise<unknown>, expectedCode: string) {
+  process.stdout.write(`\n[smoke] ${name}... `);
+  try {
+    await fn();
+    process.stdout.write(`FAILED (expected to be rejected with ${expectedCode}, but it succeeded)\n`);
+    process.exit(1);
+  } catch (err) {
+    if (err instanceof RefHubError && err.code === expectedCode) {
+      process.stdout.write(`OK (correctly rejected: ${err.code})\n`);
+      return;
+    }
+    process.stdout.write(`FAILED (expected code ${expectedCode})\n`);
     console.error(err);
     process.exit(1);
   }
@@ -89,8 +107,28 @@ async function main() {
   await step('get stats', () => client.getStats(testVaultId));
   await step('get audit log', () => client.getAudit(testVaultId));
 
-  // 9. Cleanup — delete test vault
-  await step('delete test vault (cleanup)', () => client.deleteVault(testVaultId));
+  // 9. Archive lifecycle — irreversible, so this runs last, right before cleanup.
+  // No unarchive step exists anywhere in this flow by design.
+  const archived = await step('archive test vault', () => client.archiveVault(testVaultId)) as { data: { archived_at: string | null } };
+  if (!archived.data.archived_at) {
+    console.error('FAILED: archiveVault succeeded but archived_at was not set on the response');
+    process.exit(1);
+  }
+
+  await expectRejection(
+    'write against archived vault is rejected',
+    () => client.updateVault(testVaultId, { name: 'should not be allowed' }),
+    'vault_archived',
+  );
+  await expectRejection(
+    're-archiving an already-archived vault is rejected',
+    () => client.archiveVault(testVaultId),
+    'vault_archived',
+  );
+  await step('read still works on an archived vault', () => client.getVault(testVaultId));
+
+  // 10. Cleanup — delete test vault (owner can still delete an archived vault outright)
+  await step('delete archived test vault (cleanup)', () => client.deleteVault(testVaultId));
 
   console.log('\n✓ All smoke tests passed\n');
 }

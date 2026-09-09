@@ -18,6 +18,7 @@ export declare function handleVaultUpdate(client: RefHubClient, vaultId: string,
     abstract?: string;
 }, tableMode: boolean): Promise<void>;
 export declare function handleVaultDelete(client: RefHubClient, vaultId: string, confirmed: boolean): Promise<void>;
+export declare function handleVaultArchive(client: RefHubClient, vaultId: string, confirmed: boolean, tableMode: boolean): Promise<void>;
 export declare function handleVaultVisibility(client: RefHubClient, vaultId: string, opts: {
     visibility: string;
     slug?: string;

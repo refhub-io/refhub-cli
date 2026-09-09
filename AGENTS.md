@@ -44,6 +44,7 @@ Scopes are enforced by the backend. If the key is missing, invalid, expired, rev
 - Never create tags implicitly during item writes. Tag creation is a separate operation.
 - Never retry a bulk write after ambiguous failure unless the command supports and used an idempotency key.
 - Never proceed with vault or item deletion without explicit user confirmation.
+- Never proceed with `vaults archive` without explicit user confirmation. It is permanent: there is no unarchive command or route, and it freezes the vault's items, tags, relations, and shares read-only, not just the vault's own metadata.
 - Treat `tag_ids` replacement semantics as destructive enough to call out before updating.
 - Keep output machine-readable when the user or workflow asks for JSON.
 

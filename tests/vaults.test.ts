@@ -7,6 +7,7 @@ import {
   handleVaultCreate,
   handleVaultUpdate,
   handleVaultDelete,
+  handleVaultArchive,
   handleVaultVisibility,
   handleSharesList,
   handleShareAdd,
@@ -74,6 +75,20 @@ describe('vault commands', () => {
       expect.stringContaining('/vaults/v1'),
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+
+  it('handleVaultArchive requires --confirm (exits 2 without it)', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(handleVaultArchive(client, 'v1', false, false)).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(2);
+  });
+
+  it('handleVaultArchive calls POST /vaults/:id/archive when confirmed', async () => {
+    mockFetch({ data: { id: 'v1', archived_at: '2026-01-01T00:00:00Z' } });
+    await handleVaultArchive(client, 'v1', true, false);
+    const call = vi.mocked(fetch).mock.calls[0];
+    expect(call?.[0]).toContain('/vaults/v1/archive');
+    expect(call?.[1]?.method).toBe('POST');
   });
 
   it('handleVaultVisibility sends PATCH to visibility endpoint', async () => {

@@ -29,7 +29,7 @@ export class RefHubError extends Error {
 }
 
 export class RefHubClient {
-  private readonly baseUrl = 'https://refhub-api.netlify.app/api/v1';
+  private readonly baseUrl = process.env['REFHUB_API_BASE_URL'] ?? 'https://refhub-api.netlify.app/api/v1';
   private readonly headers: Record<string, string>;
 
   constructor(apiKey: string) {
@@ -96,6 +96,11 @@ export class RefHubClient {
 
   deleteVault(vaultId: string) {
     return this.req<ApiResponse<{ id: string }>>('DELETE', `/vaults/${vaultId}`);
+  }
+
+  /** Permanently archives the vault. There is no unarchive — this cannot be undone. */
+  archiveVault(vaultId: string) {
+    return this.req<ApiResponse<Vault>>('POST', `/vaults/${vaultId}/archive`);
   }
 
   setVaultVisibility(vaultId: string, body: { visibility: string; public_slug?: string }) {

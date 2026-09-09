@@ -18,6 +18,8 @@ export interface Vault {
   item_count: number;
   created_at: string;
   updated_at: string;
+  /** Set once, permanently, when the vault is archived. No unarchive path exists. */
+  archived_at: string | null;
 }
 
 export interface Item {

@@ -13,6 +13,8 @@ project uses [Semantic Versioning](https://semver.org/). History prior to
 - `--section <sectionId>`/`--unset-section`/`--featured`/`--unfeature`/`--featured-note <text>` on `items update`. These are vault-local curation fields; the backend requires vault owner access to set any of them, distinct from the editor-level access needed for the rest of `items update`.
 - `refhub relations scan --vault <id> [--item <itemId>] [--dry-run] [--limit <n>]` — scans each item's Semantic Scholar references/citations, matches them against sibling vault items by DOI or exact title, and creates `cites` relations for new matches. Pure client-side orchestration on the existing `discover`/relations building blocks, mirroring `enrich`'s pattern — no new backend route.
 - `Section` type, and `section_id`/`section_position`/`featured`/`featured_note` fields on `Item`.
+- `refhub vaults archive <vaultId> --confirm` — permanently archives a vault via the new `POST /vaults/:vaultId/archive` backend route. There is no unarchive command; this cannot be undone.
+- `archived_at` on the `Vault` type, and surfaced in `vaults list`/`vaults get` output.
 
 ## [1.5.0] - 2026-07-08
 

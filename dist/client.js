@@ -61,6 +61,10 @@ export class RefHubClient {
     deleteVault(vaultId) {
         return this.req('DELETE', `/vaults/${vaultId}`);
     }
+    /** Permanently archives the vault. There is no unarchive — this cannot be undone. */
+    archiveVault(vaultId) {
+        return this.req('POST', `/vaults/${vaultId}/archive`);
+    }
     setVaultVisibility(vaultId, body) {
         return this.req('PATCH', `/vaults/${vaultId}/visibility`, body);
     }

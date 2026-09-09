@@ -77,6 +77,7 @@ refhub vaults get <vaultId>
 refhub vaults create --name <n> [--description] [--color] [--visibility] [--category]
 refhub vaults update <vaultId> [--name] [--description] [--color] [--category]
 refhub vaults delete <vaultId> --confirm
+refhub vaults archive <vaultId> --confirm
 refhub vaults visibility <vaultId> --visibility <private|protected|public> [--slug]
 
 # shares
@@ -249,6 +250,7 @@ rate-limited responses (429) include `retry_after_seconds`.
 ## // guardrails
 
 - `vaults delete` and `items delete` require `--confirm` — hard deletes, no undo
+- `vaults archive` requires `--confirm` — permanent read-only lockdown, no undo, no unarchive command exists
 - `items upsert` without `--idempotency-key` emits a `partial_write_risk` warning before exiting 1 on failure
 - `items update --tags` warns that the tags list is a full replacement
 

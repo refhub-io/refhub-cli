@@ -1,5 +1,6 @@
 import { resolveClient, run } from '../client.js';
 import { format } from '../format.js';
+import { registerRelationsScan } from './relationsScan.js';
 const RELATION_TYPES = 'cites|extends|builds_on|contradicts|reviews|related';
 export async function handleRelationsList(client, vaultId, type, tableMode) {
     const result = await client.listRelations(vaultId, type);
@@ -66,4 +67,5 @@ export function registerRelations(program) {
         const client = resolveClient(g.apiKey);
         await run(() => handleRelationDelete(client, opts.vault, relationId));
     });
+    registerRelationsScan(relations);
 }

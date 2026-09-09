@@ -155,6 +155,19 @@ export class RefHubClient {
     detachTags(vaultId, itemId, tagIds) {
         return this.req('POST', `/vaults/${vaultId}/tags/detach`, { item_id: itemId, tag_ids: tagIds });
     }
+    // ── Sections ─────────────────────────────────────────────────────────────────
+    listSections(vaultId) {
+        return this.req('GET', `/vaults/${vaultId}/sections`);
+    }
+    createSection(vaultId, body) {
+        return this.req('POST', `/vaults/${vaultId}/sections`, body);
+    }
+    updateSection(vaultId, sectionId, body) {
+        return this.req('PATCH', `/vaults/${vaultId}/sections/${sectionId}`, body);
+    }
+    deleteSection(vaultId, sectionId) {
+        return this.req('DELETE', `/vaults/${vaultId}/sections/${sectionId}`);
+    }
     // ── Relations ────────────────────────────────────────────────────────────────
     listRelations(vaultId, type) {
         const qs = type ? `?type=${encodeURIComponent(type)}` : '';

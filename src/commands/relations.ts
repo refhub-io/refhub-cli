@@ -2,6 +2,7 @@
 import type { Command } from 'commander';
 import { RefHubClient, resolveClient, run } from '../client.js';
 import { format } from '../format.js';
+import { registerRelationsScan } from './relationsScan.js';
 
 const RELATION_TYPES = 'cites|extends|builds_on|contradicts|reviews|related';
 
@@ -98,4 +99,6 @@ export function registerRelations(program: Command): void {
       const client = resolveClient(g.apiKey);
       await run(() => handleRelationDelete(client, opts.vault, relationId));
     });
+
+  registerRelationsScan(relations);
 }

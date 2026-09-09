@@ -29,7 +29,20 @@ export interface Item {
     pdf_url?: string;
     drive_pdf_url?: string | null;
     tag_ids: string[];
+    section_id?: string | null;
+    section_position?: number;
+    featured?: boolean;
+    featured_note?: string | null;
     version: number;
+    created_at: string;
+    updated_at: string;
+}
+export interface Section {
+    id: string;
+    vault_id: string;
+    name: string;
+    description?: string | null;
+    position: number;
     created_at: string;
     updated_at: string;
 }

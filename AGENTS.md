@@ -9,6 +9,8 @@ Use this when a user asks an agent to:
 - list, read, search, or export RefHub vault content;
 - add, update, import, or delete vault items;
 - manage tags, relations, vault metadata, and shares through the CLI;
+- curate a vault's sections or an item's featured/section state for its public Codex page (owner-only);
+- scan a vault for citation-based relationship suggestions and create `cites` relations from the matches;
 - enrich publication metadata or upload PDFs through supported CLI commands;
 - verify CLI behavior from source before changing code.
 
@@ -46,6 +48,8 @@ Scopes are enforced by the backend. If the key is missing, invalid, expired, rev
 - Never proceed with vault or item deletion without explicit user confirmation.
 - Never proceed with `vaults archive` without explicit user confirmation. It is permanent: there is no unarchive command or route, and it freezes the vault's items, tags, relations, and shares read-only, not just the vault's own metadata.
 - Treat `tag_ids` replacement semantics as destructive enough to call out before updating.
+- `items update --section`/`--unset-section`/`--featured`/`--unfeature`/`--featured-note` and all `sections` writes require vault owner access — an editor-role API key gets `403 insufficient_vault_access` even though it can update other item fields. Don't retry these with the same non-owner key.
+- `relations scan` only proposes `cites` relations from citation-graph matches — it is not a substitute for `relations create` when the user means `extends`/`contradicts`/`related`/etc.
 - Keep output machine-readable when the user or workflow asks for JSON.
 
 ## Error handling

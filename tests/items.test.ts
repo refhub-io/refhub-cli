@@ -98,6 +98,34 @@ describe('item commands', () => {
     expect(warnings).toContain('tag_replacement');
   });
 
+  it('handleItemUpdate sends section_id when --section passed', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, section: 's1' }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body).toEqual({ section_id: 's1' });
+  });
+
+  it('handleItemUpdate sends section_id: null when --unset-section passed', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, unsetSection: true }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body).toEqual({ section_id: null });
+  });
+
+  it('handleItemUpdate sends featured: true when --featured passed', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, featured: true, featuredNote: 'landmark result' }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body).toEqual({ featured: true, featured_note: 'landmark result' });
+  });
+
+  it('handleItemUpdate sends featured: false when --unfeature passed', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { title: undefined, authors: undefined, year: undefined, doi: undefined, tags: undefined, unfeature: true }, false);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body).toEqual({ featured: false });
+  });
+
   it('handleItemDelete requires --confirm', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(handleItemDelete(client, 'v1', 'i1', false)).rejects.toThrow('exit');

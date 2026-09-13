@@ -251,8 +251,12 @@ export class RefHubClient {
   // Account-scoped, not vault-scoped -- an inbox item has no vault until accept()
   // files it into one, unlike every other resource above.
 
-  listInbox() {
-    return this.req<ApiResponse<InboxItem[]>>('GET', '/inbox');
+  listInbox(params: { page?: number; limit?: number } = {}) {
+    const q = new URLSearchParams();
+    if (params.page !== undefined) q.set('page', String(params.page));
+    if (params.limit !== undefined) q.set('limit', String(params.limit));
+    const qs = q.toString() ? `?${q}` : '';
+    return this.req<ApiResponse<InboxItem[]>>('GET', `/inbox${qs}`);
   }
 
   captureInboxDoi(doi: string) {

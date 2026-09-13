@@ -42,11 +42,19 @@ describe('inbox commands', () => {
 
   it('handleInboxList calls GET /inbox', async () => {
     mockFetch({ data: [] });
-    await handleInboxList(client, false);
+    await handleInboxList(client, {}, false);
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       expect.stringContaining('/inbox'),
       expect.objectContaining({ method: 'GET' }),
     );
+  });
+
+  it('handleInboxList forwards page/limit as query params', async () => {
+    mockFetch({ data: [] });
+    await handleInboxList(client, { page: 2, limit: 100 }, false);
+    const [url] = vi.mocked(fetch).mock.calls[0]!;
+    expect(String(url)).toContain('page=2');
+    expect(String(url)).toContain('limit=100');
   });
 
   it('handleInboxCaptureDoi sends source_type doi and the doi as source_ref', async () => {

@@ -158,7 +158,7 @@ refhub relations scan --vault <id> [--item <itemId>] [--dry-run] [--limit <n>]
 capture papers now, file them into a vault later. unlike every other command group, inbox items have no `--vault` — they belong to the account until `accept` files one.
 
 ```bash
-refhub inbox list
+refhub inbox list [--page <n>] [--limit <n>]
 refhub inbox capture doi <doi>
 refhub inbox capture bibtex (--bibtex <string> | --file <path>)   # bulk -- one inbox item per entry
 refhub inbox capture manual --title <title>
@@ -169,8 +169,10 @@ refhub inbox postpone <itemId>
 refhub inbox delete <itemId> --confirm
 ```
 
+- `list` is paginated server-side (default 50 per page, max 200) — pass `--page`/`--limit` to see more than the first page.
 - `merge` files the item as a duplicate of whatever match the backend already found for it (`duplicate_of_publication_id`) — it does not accept a `--vault`/target of your own choosing.
 - `reject`/`merge`/`delete` require `--confirm`: none of the three can be undone. `accept` and `postpone` don't need it — accept files real data rather than discarding it, and postpone only reorders the queue.
+- `capture bibtex` inserts entries one at a time server-side with no idempotency key — if one entry fails partway through a large batch, earlier entries in that batch are already created. Check `inbox list` before retrying the same content to avoid duplicates (tracked for a real fix as `.netlify#40`).
 
 ### import
 

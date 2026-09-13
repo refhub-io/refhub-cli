@@ -10,6 +10,7 @@ project uses [Semantic Versioning](https://semver.org/). History prior to
 
 ### Added
 - `refhub inbox list/capture/accept/reject/merge/postpone/delete` — capture papers into a staging queue and file them into a vault later, matching the new `.netlify` `/api/v1/inbox` route family. Unlike every other command group, inbox items are account-scoped, not vault-scoped, until `accept` files one. `capture` has three subcommands (`doi`/`bibtex`/`manual`); `bibtex` is bulk, one inbox item per entry. `reject`/`merge`/`delete` require `--confirm` — none of the three can be undone.
+- `--page`/`--limit` on `inbox list` — the backend paginates (default 50, max 200) and the command was silently truncating queues past the first page until this was added.
 - `InboxItem` type.
 
 ## [1.6.0] - 2026-09-08

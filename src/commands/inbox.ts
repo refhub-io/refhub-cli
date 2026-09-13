@@ -4,8 +4,12 @@ import type { Command } from 'commander';
 import { RefHubClient, resolveClient, run } from '../client.js';
 import { format } from '../format.js';
 
-export async function handleInboxList(client: RefHubClient, tableMode: boolean): Promise<void> {
-  const result = await client.listInbox();
+export async function handleInboxList(
+  client: RefHubClient,
+  opts: { page?: number; limit?: number },
+  tableMode: boolean,
+): Promise<void> {
+  const result = await client.listInbox(opts);
   format(result, tableMode, ['id', 'status', 'source_type', 'source_ref', 'suggested_vault_id', 'created_at']);
 }
 
@@ -74,10 +78,12 @@ export function registerInbox(program: Command): void {
   inbox
     .command('list')
     .description('List pending inbox items')
-    .action(async (_opts, cmd) => {
+    .option('--page <n>', 'page number', (v) => parseInt(v, 10))
+    .option('--limit <n>', 'results per page (server default 50, max 200)', (v) => parseInt(v, 10))
+    .action(async (opts, cmd) => {
       const g = cmd.optsWithGlobals();
       const client = resolveClient(g.apiKey);
-      await run(() => handleInboxList(client, g.table ?? false));
+      await run(() => handleInboxList(client, { page: opts.page, limit: opts.limit }, g.table ?? false));
     });
 
   const capture = inbox.command('capture').description('Capture a paper into the inbox');

@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this
 project uses [Semantic Versioning](https://semver.org/). History prior to
 1.5.0 was not tracked in this file.
 
+## [1.7.0] - 2026-09-13
+
+### Added
+- `refhub inbox list/capture/accept/reject/merge/postpone/delete` — capture papers into a staging queue and file them into a vault later, matching the new `.netlify` `/api/v1/inbox` route family. Unlike every other command group, inbox items are account-scoped, not vault-scoped, until `accept` files one. `capture` has three subcommands (`doi`/`bibtex`/`manual`); `bibtex` is bulk, one inbox item per entry. `reject`/`merge`/`delete` require `--confirm` — none of the three can be undone.
+- `InboxItem` type.
+
 ## [1.6.0] - 2026-09-08
 
 ### Added

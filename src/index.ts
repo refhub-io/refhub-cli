@@ -12,6 +12,7 @@ import { registerAudit } from './commands/audit.js';
 import { registerEnrich } from './commands/enrich.js';
 import { registerPdf } from './commands/pdf.js';
 import { registerDiscover } from './commands/discover.js';
+import { registerInbox } from './commands/inbox.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -36,5 +37,6 @@ registerAudit(program);
 registerEnrich(program);
 registerDiscover(program);
 registerPdf(program);
+registerInbox(program);
 
 program.parseAsync();

@@ -126,6 +126,24 @@ export interface AuditEntry {
   created_at: string;
 }
 
+export type InboxSourceType = 'doi' | 'bibtex' | 'manual';
+export type InboxItemStatus = 'pending' | 'accepted' | 'rejected' | 'merged';
+
+export interface InboxItem {
+  id: string;
+  status: InboxItemStatus;
+  source_type: InboxSourceType;
+  source_ref: string;
+  parsed_fields: Record<string, unknown>;
+  suggested_vault_id: string | null;
+  suggested_tag_ids: string[] | null;
+  duplicate_of_publication_id: string | null;
+  filed_publication_id: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ApiResponse<T> {
   data: T;
 }

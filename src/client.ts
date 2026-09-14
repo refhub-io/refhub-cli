@@ -3,7 +3,7 @@ import type {
   ApiResponse, Vault, VaultDetail, Share,
   Item, UpsertResult, PreviewResult,
   Tag, Relation, BibTeXImportResult, AuditEntry, VaultStats, RelationType,
-  SemanticScholarPaper, SemanticScholarDoiMetadata, Section,
+  SemanticScholarPaper, SemanticScholarDoiMetadata, Section, InboxItem,
 } from './types.js';
 
 export class RefHubError extends Error {
@@ -245,6 +245,52 @@ export class RefHubClient {
 
   deleteRelation(vaultId: string, relationId: string) {
     return this.req<ApiResponse<{ id: string }>>('DELETE', `/vaults/${vaultId}/relations/${relationId}`);
+  }
+
+  // ── Inbox ────────────────────────────────────────────────────────────────────
+  // Account-scoped, not vault-scoped -- an inbox item has no vault until accept()
+  // files it into one, unlike every other resource above.
+
+  listInbox(params: { page?: number; limit?: number } = {}) {
+    const q = new URLSearchParams();
+    if (params.page !== undefined) q.set('page', String(params.page));
+    if (params.limit !== undefined) q.set('limit', String(params.limit));
+    const qs = q.toString() ? `?${q}` : '';
+    return this.req<ApiResponse<InboxItem[]>>('GET', `/inbox${qs}`);
+  }
+
+  captureInboxDoi(doi: string) {
+    return this.req<ApiResponse<InboxItem>>('POST', '/inbox', { source_type: 'doi', source_ref: doi });
+  }
+
+  captureInboxBibtex(bibtex: string) {
+    return this.req<ApiResponse<InboxItem[]>>('POST', '/inbox', { source_type: 'bibtex', source_ref: bibtex });
+  }
+
+  captureInboxManual(title: string) {
+    return this.req<ApiResponse<InboxItem>>('POST', '/inbox', { source_type: 'manual', parsed_fields: { title } });
+  }
+
+  acceptInboxItem(itemId: string, vaultId: string, tagIds: string[] = []) {
+    return this.req<ApiResponse<{ vault_publication_id: string; publication_id: string }>>(
+      'POST', `/inbox/${itemId}/accept`, { vault_id: vaultId, tag_ids: tagIds },
+    );
+  }
+
+  rejectInboxItem(itemId: string) {
+    return this.req<ApiResponse<{ id: string }>>('POST', `/inbox/${itemId}/reject`);
+  }
+
+  mergeInboxItem(itemId: string) {
+    return this.req<ApiResponse<{ id: string; filed_publication_id: string }>>('POST', `/inbox/${itemId}/merge`);
+  }
+
+  postponeInboxItem(itemId: string) {
+    return this.req<ApiResponse<{ id: string; sort_order: number }>>('POST', `/inbox/${itemId}/postpone`);
+  }
+
+  deleteInboxItem(itemId: string) {
+    return this.req<ApiResponse<{ id: string }>>('DELETE', `/inbox/${itemId}`);
   }
 
   // ── Import ───────────────────────────────────────────────────────────────────

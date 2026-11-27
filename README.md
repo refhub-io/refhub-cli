@@ -92,8 +92,8 @@ refhub vaults shares remove <vaultId> <shareId>
 ```bash
 refhub items list --vault <id> [--page] [--limit]
 refhub items get --vault <id> <itemId>
-refhub items add --vault <id> --title <t> [--authors "Smith J,Doe A"] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes]
-refhub items update --vault <id> <itemId> [--title] [--authors] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes] [--section <sectionId> | --unset-section] [--featured | --unfeature] [--featured-note <text>]
+refhub items add --vault <id> --title <t> [--author "Smith, John" ...] [--authors "Smith, John; Doe, Jane"] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes]
+refhub items update --vault <id> <itemId> [--title] [--author ... | --authors] [--year] [--doi] [--url] [--pdf-url] [--tags <id,id>] [--notes] [--section <sectionId> | --unset-section] [--featured | --unfeature] [--featured-note <text>]
 refhub items delete --vault <id> <itemId> --confirm
 refhub items upsert --vault <id> --file <items.json> [--idempotency-key]
 refhub items preview --vault <id> --file <items.json>
@@ -105,6 +105,10 @@ refhub items changes --vault <id> --since <ISO>
 `--tags` on update is a **full replacement**, not an append. a warning is printed to stderr.
 
 `--pdf-url` sets the frontend's `publisher_pdf` field (a link to a publisher-hosted PDF). it is distinct from the frontend's `drive_pdf` field (the Google Drive-hosted copy created by `refhub pdf upload`, see below) — the Drive copy is readable back afterward too, as `drive_pdf_url` on item reads (see the `pdf` command below).
+
+authors: repeat `--author` once per author (commas are kept, so `--author "Smith, John"` is one author), or pass them all to `--authors` separated by `;`. Without a `;`, `--authors` still splits on commas, as before, and prints a hint.
+
+empty values: on `items update`, an empty value clears that field (`--doi ""`, `--year ""`, `--authors ""`, `--tags ""` and so on); `--title` can't be empty. On `items add`, an empty optional value is simply left out.
 
 `--section`/`--unset-section`/`--featured`/`--unfeature`/`--featured-note` are vault-local curation fields — grouping and highlighting items for display on public vault pages. **Setting any of them requires vault owner access**, even for an api key with `vaults:write` scope held by a non-owner editor share — the backend runs a second, owner-level access check for these specific fields, separate from the editor-level check for everything else `items update` can change.
 

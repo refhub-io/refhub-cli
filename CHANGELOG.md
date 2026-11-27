@@ -6,7 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this
 project uses [Semantic Versioning](https://semver.org/). History prior to
 1.5.0 was not tracked in this file.
 
-## [Unreleased]
+## [1.8.0] - 2026-11-27
+
+### Added
+- `--author <name>` on `items add` and `items update`: one author per flag, repeatable, with commas kept, so `--author "Smith, John"` is one author (#23).
+
+### Changed
+- `--authors` splits on `;` when the value contains one (`"Smith, John; Doe, Jane"`). Without a `;` it still splits on commas, as before, and prints an `authors_split_on_commas` hint (#23).
+- One empty-value rule for item flags (#23). On `items update`, an empty value clears an optional field. `--doi ""`, `--year ""`, `--authors ""` and `--tags ""` used to be ignored or send invalid data and now clear, like `--url ""` and `--notes ""` already did. `--title ""` is rejected, because every item needs a title. On `items add`, empty optional values are left out instead of being sent as empty strings.
+- `--year` must be a whole year; anything else is a usage error instead of being sent as `NaN`.
 
 ### Fixed
 - `dist/` is no longer tracked in git. The committed build was stale (it had no `inbox` command), so running the CLI from a fresh clone gave an outdated CLI. A new `prepare` script builds on `npm install`, so clones and git installs get a current build. npm releases are unaffected; CI has always built them fresh.

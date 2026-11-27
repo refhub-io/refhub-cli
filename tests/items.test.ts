@@ -12,6 +12,7 @@ import {
   handleItemSearch,
   handleItemStats,
   handleItemChanges,
+  parseYearOption,
 } from '../src/commands/items.js';
 
 function mockFetch(body: unknown, ok = true, status = 200) {
@@ -157,5 +158,79 @@ describe('item commands', () => {
     await handleItemStats(client, 'v1', false);
     const out = JSON.parse(String(stdoutSpy.mock.calls[0]?.[0]));
     expect(out.data.item_count).toBe(5);
+  });
+});
+
+describe('item authors and empty values', () => {
+  let client: RefHubClient;
+  let stderrSpy: ReturnType<typeof vi.spyOn>;
+  const sentBody = () => JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+  const stderr = () => stderrSpy.mock.calls.map((c) => String(c[0])).join('');
+
+  beforeEach(() => {
+    client = new RefHubClient('rhk_test');
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('--author keeps a "Last, First" name as one author, once per flag', async () => {
+    mockFetch({ data: [{ id: 'i1' }] });
+    await handleItemAdd(client, 'v1', { title: 'T', author: ['Smith, John', 'Doe, Jane'] }, false);
+    expect(sentBody().items[0].authors).toEqual(['Smith, John', 'Doe, Jane']);
+  });
+
+  it('--authors splits on ";" when present, so "Last, First" names survive', async () => {
+    mockFetch({ data: [{ id: 'i1' }] });
+    await handleItemAdd(client, 'v1', { title: 'T', authors: 'Smith, John; Doe, Jane' }, false);
+    expect(sentBody().items[0].authors).toEqual(['Smith, John', 'Doe, Jane']);
+    expect(stderr()).not.toContain('authors_split_on_commas');
+  });
+
+  it('--authors without ";" still splits on commas, with a hint', async () => {
+    mockFetch({ data: [{ id: 'i1' }] });
+    await handleItemAdd(client, 'v1', { title: 'T', authors: 'Smith J,Doe A' }, false);
+    expect(sentBody().items[0].authors).toEqual(['Smith J', 'Doe A']);
+    expect(stderr()).toContain('authors_split_on_commas');
+  });
+
+  it('rejects --author and --authors together', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(handleItemAdd(client, 'v1', { title: 'T', author: ['A'], authors: 'B' }, false)).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(2);
+  });
+
+  it('add leaves out empty optional values', async () => {
+    mockFetch({ data: [{ id: 'i1' }] });
+    await handleItemAdd(client, 'v1', { title: 'T', authors: '', doi: '', url: '', notes: '', pdfUrl: '', tags: '', year: null }, false);
+    expect(sentBody().items[0]).toEqual({ title: 'T' });
+  });
+
+  it('add rejects an empty --title', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(handleItemAdd(client, 'v1', { title: '  ' }, false)).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(2);
+  });
+
+  it('update clears every optional field given an empty value', async () => {
+    mockFetch({ data: { id: 'i1' } });
+    await handleItemUpdate(client, 'v1', 'i1', { authors: '', year: '', doi: '', url: '', notes: '', pdfUrl: '', tags: '' }, false);
+    expect(sentBody()).toEqual({ authors: [], year: null, doi: '', url: '', notes: '', pdf_url: '', tag_ids: [] });
+  });
+
+  it('update rejects an empty --title', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(handleItemUpdate(client, 'v1', 'i1', { title: '' }, false)).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(2);
+  });
+
+  it('--year parses whole years, treats "" as no year, and rejects anything else', () => {
+    expect(parseYearOption('2024')).toBe(2024);
+    expect(parseYearOption('')).toBe('');
+    expect(() => parseYearOption('20x4')).toThrow('must be a whole year');
   });
 });

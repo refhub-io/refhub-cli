@@ -14,6 +14,9 @@ if (!key) {
 const client = new RefHubClient(key);
 let testVaultId = '';
 
+/** A failed step. Its details are already printed; it only stops the run, so cleanup still happens. */
+class SmokeFailure extends Error {}
+
 async function step(name: string, fn: () => Promise<unknown>) {
   process.stdout.write(`\n[smoke] ${name}... `);
   try {
@@ -23,7 +26,7 @@ async function step(name: string, fn: () => Promise<unknown>) {
   } catch (err) {
     process.stdout.write('FAILED\n');
     console.error(err);
-    process.exit(1);
+    throw new SmokeFailure(name);
   }
 }
 
@@ -32,8 +35,6 @@ async function expectRejection(name: string, fn: () => Promise<unknown>, expecte
   process.stdout.write(`\n[smoke] ${name}... `);
   try {
     await fn();
-    process.stdout.write(`FAILED (expected to be rejected with ${expectedCode}, but it succeeded)\n`);
-    process.exit(1);
   } catch (err) {
     if (err instanceof RefHubError && err.code === expectedCode) {
       process.stdout.write(`OK (correctly rejected: ${err.code})\n`);
@@ -41,7 +42,24 @@ async function expectRejection(name: string, fn: () => Promise<unknown>, expecte
     }
     process.stdout.write(`FAILED (expected code ${expectedCode})\n`);
     console.error(err);
-    process.exit(1);
+    throw new SmokeFailure(name);
+  }
+  process.stdout.write(`FAILED (expected to be rejected with ${expectedCode}, but it succeeded)\n`);
+  throw new SmokeFailure(name);
+}
+
+/** Deletes the test vault if a failed run left it behind. Never throws, so it can't hide the original failure. */
+async function cleanUpTestVault() {
+  if (!testVaultId) return;
+  const vaultId = testVaultId;
+  process.stdout.write(`\n[smoke] cleanup: delete test vault ${vaultId}... `);
+  try {
+    await client.deleteVault(vaultId);
+    testVaultId = '';
+    process.stdout.write('OK\n');
+  } catch (err) {
+    process.stdout.write('FAILED\n');
+    console.error(`WARNING: test vault ${vaultId} was not cleaned up; delete it by hand.`, err);
   }
 }
 
@@ -112,7 +130,7 @@ async function main() {
   const archived = await step('archive test vault', () => client.archiveVault(testVaultId)) as { data: { archived_at: string | null } };
   if (!archived.data.archived_at) {
     console.error('FAILED: archiveVault succeeded but archived_at was not set on the response');
-    process.exit(1);
+    throw new SmokeFailure('archive test vault');
   }
 
   await expectRejection(
@@ -129,14 +147,15 @@ async function main() {
 
   // 10. Cleanup — delete test vault (owner can still delete an archived vault outright)
   await step('delete archived test vault (cleanup)', () => client.deleteVault(testVaultId));
+  testVaultId = '';
 
   console.log('\n✓ All smoke tests passed\n');
 }
 
-main().catch((err) => {
-  console.error('Unexpected error:', err);
-  if (testVaultId) {
-    console.error(`WARNING: Test vault ${testVaultId} may not have been cleaned up.`);
-  }
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    if (!(err instanceof SmokeFailure)) console.error('Unexpected error:', err);
+    process.exitCode = 1;
+  })
+  // Runs after a failure at any step, so a failed run doesn't leave a smoke-test vault in the live account.
+  .finally(cleanUpTestVault);

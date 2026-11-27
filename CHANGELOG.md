@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this
 project uses [Semantic Versioning](https://semver.org/). History prior to
 1.5.0 was not tracked in this file.
 
+## [Unreleased]
+
+### Fixed
+- `dist/` is no longer tracked in git. The committed build was stale (it had no `inbox` command), so running the CLI from a fresh clone gave an outdated CLI. A new `prepare` script builds on `npm install`, so clones and git installs get a current build. npm releases are unaffected; CI has always built them fresh.
+- `npm run smoke` now deletes its test vault when a step fails. Before, any failure exited before cleanup and left a `smoke-test-*` vault in the live account.
+
 ## [1.7.0] - 2026-09-13
 
 ### Added
